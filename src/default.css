@@ -16,19 +16,19 @@
 .rfgcButton {
 	color:#FFFFFF;
 	icon: Embed(source="assets/main/top_rfgc.png");
-	downIcon: Embed(source="assets/main/top_rfgc_h.jpg");
+	downIcon: Embed(source="assets/main/top_rfgc_h.png");
 	overIcon: Embed(source="assets/main/top_rfgc.png");
 	disableIcon: Embed(source="assets/main/top_rfgc.png");
-	selectedIcon: Embed(source="assets/main/top_rfgc_h.jpg");
+	selectedIcon: Embed(source="assets/main/top_rfgc_h.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
 .sjtjButton {
 	color:#FFFFFF;
 	icon: Embed(source="assets/main/top_sjtj.png");
-	downIcon: Embed(source="assets/main/top_sjtj_h.jpg");
+	downIcon: Embed(source="assets/main/top_sjtj_h.png");
 	overIcon: Embed(source="assets/main/top_sjtj.png");
 	disableIcon: Embed(source="assets/main/top_sjtj.png");
-	selectedIcon: Embed(source="assets/main/top_sjtj_h.jpg");
+	selectedIcon: Embed(source="assets/main/top_sjtj_h.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
 .dtscButton {

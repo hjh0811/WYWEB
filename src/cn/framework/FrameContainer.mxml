@@ -274,7 +274,7 @@
 			{
 				
 				// TODO Auto-generated method stub
-				ToggleButton1.selected =false;
+//				ToggleButton1.selected =false;
 				ToggleButton2.selected =false;
 				ToggleButton3.selected =false;
 				ToggleButton4.selected = false;
@@ -364,24 +364,24 @@
 			
 			[Bindable]
 			private var linkArray:ArrayCollection = new ArrayCollection([{label:"登录"},{label:"收藏"}]);
-			//登录
-			private function login():void
-			{
-				if(this.loginSuccess == false)
-				{
-					if(loginPop==null)
-					{
-						loginPop = PopUpManager.createPopUp(this.parentApplication.parent,LoginPop,true) as LoginPop;
-						loginPop.addEventListener("LOGIN_SUCCESS",loginSuccessHandler);
-					}
-					PopUpManager.centerPopUp(loginPop);
-					loginPop.visible = true;
-				}
-				else
-				{
-					Alert.show("确定退出登录?","提示",Alert.YES|Alert.NO,this,logOffHandler);
-				}
-			}
+//			//登录
+//			private function login():void
+//			{
+////				if(this.loginSuccess == false)
+////				{
+////					if(loginPop==null)
+////					{
+////						loginPop = PopUpManager.createPopUp(this.parentApplication.parent,LoginPop,true) as LoginPop;
+////						loginPop.addEventListener("LOGIN_SUCCESS",loginSuccessHandler);
+////					}
+////					PopUpManager.centerPopUp(loginPop);
+////					loginPop.visible = true;
+////				}
+////				else
+////				{
+////					Alert.show("确定退出登录?","提示",Alert.YES|Alert.NO,this,logOffHandler);
+////				}
+//			}
 			
 			//退出登录
 			private function logOffHandler(event:CloseEvent):void
@@ -399,12 +399,12 @@
 			private function loginSuccessHandler(event:Event):void
 			{
 				this.loginSuccess = true;
-				ToggleButton1.selected =false;
+//				ToggleButton1.selected =false;
 				ToggleButton2.selected =false;
 				ToggleButton3.selected =false;
 				ToggleButton4.selected = true;
 				
-				this.viewStack.selectedIndex = 3;
+				this.viewStack.selectedIndex = 1;
 				if(widgetTable.find("cn/framework/widgets/UserManagerWidget.swf")==null)
 				{
 					loadManagerConsole();
@@ -424,6 +424,82 @@
 					pathpointlayer.clear();
 				if(pathlayer!=null)
 					pathlayer.clear();
+			}
+			
+			
+			private function login():void
+			{
+				
+//				var validatorArray:Array = new Array;
+//				validatorArray.push(userValid);
+//				validatorArray.push(pwValid);
+//				var array:Array = Validator.validateAll(validatorArray);
+//				if(array.length > 0)
+//				{
+//					return;
+//				}
+				
+				this.loginPage.visible = false;
+				if(userName.text.indexOf("admin")>-1)
+				{
+					loginSuccess=true;
+				}
+//				var params:Object = {t:"SYS_LOG_01",u:userName.text, p:passWord.text};
+//				//				FrameContainer.getInstance().serviceManager.getDataByService(params,loginHandler,"POST");
+//				var httpservice:HTTPService = new HTTPService;
+//				httpservice.url = this.servletcontext +"servlet/dataexchange";
+//				httpservice.resultFormat = "text";
+//				httpservice.method = "POST";
+//				httpservice.addEventListener(ResultEvent.RESULT,loginHandler);
+//				httpservice.send(params);
+			}
+			
+			private function loginHandler(event:ResultEvent):void
+			{
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null) return; 	
+				
+				var jsonValues:Array =  jsonObject["values"];
+				if(jsonValues!=null && jsonValues.length>0)
+				{
+					var loginFlag:String = jsonValues[0]["n"];
+					if(loginFlag == "1")
+					{
+						this.loginPage.visible = false;
+						if(userName.text.indexOf("admin")>-1)
+						{
+							loginSuccess=true;
+						}
+					}
+					else
+					{
+						Alert.show("用户名或密码不正确!","提示");
+					}
+				}
+				else
+				{
+					Alert.show("登陆失败！");
+				}
+			}
+			
+			protected function keyFocusChangeHandler(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode == Keyboard.ENTER)
+				{
+					login();
+				}
+			}
+			
+			
+			protected function userName_keyDownHandler(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode == Keyboard.ENTER)
+				{
+					this.passWord.setFocus();
+				}
 			}
 		]]>
 	</fx:Script>
@@ -456,13 +532,11 @@
 				<s:Image source="assets/main/top_right_yline.png"/>
 				<s:ToggleButton id="ToggleButton2" click="menuclickHandler(event,1)" width="66" height="75" styleName="rfgcButton" selected="true" useHandCursor="true" buttonMode="true"/>
 				<s:Image source="assets/main/top_right_yline.png"/>
-				<s:ToggleButton id="ToggleButton1" click="menuclickHandler(event,2)" width="66" height="75" styleName="zbcxButton" useHandCursor="true" buttonMode="true"/>
+				<s:ToggleButton id="ToggleButton3" click="menuclickHandler(event,2)" width="66" height="75" styleName="sjtjButton" useHandCursor="true" buttonMode="true"/>
 				<s:Image source="assets/main/top_right_yline.png"/>
-				<s:ToggleButton id="ToggleButton3" click="menuclickHandler(event,3)" width="66" height="75" styleName="sjtjButton" useHandCursor="true" buttonMode="true"/>
-				<s:Image source="assets/main/top_right_yline.png"/>
-				<s:ToggleButton  id="ToggleButton4" click="menuclickHandler(event,4)" width="66" height="75" styleName="dtscButton" useHandCursor="true" buttonMode="true"/>
+				<s:ToggleButton  id="ToggleButton4" click="menuclickHandler(event,3)" width="66" height="75" styleName="dtscButton" useHandCursor="true" buttonMode="true"/>
 				<s:Image source="assets/main/top_right_yline.png" visible="{loginSuccess}"  includeInLayout="{loginSuccess}"/>
-				<s:ToggleButton visible="{loginSuccess}" includeInLayout="{loginSuccess}" id="ToggleButton5" width="66" height="75" styleName="htglButton" click="menuclickHandler(event,5)" useHandCursor="true" buttonMode="true"/>
+				<s:ToggleButton visible="{loginSuccess}" includeInLayout="{loginSuccess}" id="ToggleButton5" width="66" height="75" styleName="htglButton" click="menuclickHandler(event,4)" useHandCursor="true" buttonMode="true"/>
 			</s:HGroup>
 		</mx:Canvas>
 		
@@ -499,4 +573,23 @@
 		</mx:HBox>
 		</mx:ViewStack>
 	</s:VGroup>
+	
+	<mx:VBox id="loginPage" width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" backgroundColor="0xffffff" backgroundAlpha="1">
+		<s:Group width="620" height="320">
+			<s:Image source="assets/login_bg.png" width="620" height="320"/>
+			<s:VGroup top="159" left="341" gap="10">
+				<s:HGroup verticalAlign="middle">
+					<mx:Label text="用户名:" width="55" fontSize="13" fontWeight="bold" fontFamily="宋体"/>
+					<s:TextInput id="userName"  keyDown="userName_keyDownHandler(event)"/>
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<mx:Label text="密    码:" width="55" fontSize="13" fontWeight="bold" fontFamily="宋体"/>
+					<s:TextInput id="passWord" displayAsPassword="true" keyDown="keyFocusChangeHandler(event)"/>
+				</s:HGroup>
+				<s:HGroup>
+					<mx:Button label="登陆" click="login()"/>
+				</s:HGroup>
+			</s:VGroup>
+		</s:Group>
+	</mx:VBox>
 </s:Group>
