@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+			horizontalScrollPolicy="off" verticalScrollPolicy="off"
+			layout="vertical"
+			showCloseButton="true"
+			close="{PopUpManager.removePopUp(this)}"  title="打印预览">
+			
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.Canvas;
+			import mx.managers.PopUpManager;
+			
+			import mx.printing.FlexPrintJobScaleType;
+			import mx.printing.FlexPrintJob;
+			
+			private var _mapCanvas:Canvas;
+			
+			public function set mapLayout(val:Canvas):void
+			{
+				// Add a canvas that will be printed
+				_mapCanvas = val;
+				
+				outerBox.removeAllChildren();
+				outerBox.addChild(_mapCanvas);
+			}
+			
+			private function sendToPrinter():void
+			{
+				// Create an instance of the FlexPrintJob class.
+				var myPrintJob:FlexPrintJob = new FlexPrintJob();
+				myPrintJob.printAsBitmap=false;
+				// Start the print job.
+				if (myPrintJob.start())
+				{
+					try                   
+					{
+						// Add the panel to print.
+						myPrintJob.addObject(_mapCanvas, FlexPrintJobScaleType.SHOW_ALL);
+					}
+					catch (error:Error)
+					{
+					}
+					// Send the job to the printer.
+					myPrintJob.send();
+				} 
+			} // end function sendToPrinter
+			
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" verticalAlign="middle" paddingBottom="0"  paddingTop="8">
+		<mx:Spacer width="5"/>
+		<mx:Button label="打印" 
+				click="sendToPrinter()"/>
+		<mx:Spacer width="100%"/>
+	</mx:HBox>
+	
+	<mx:VBox id="outerBox" borderStyle="none" 
+			horizontalAlign="left"
+			paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0">
+	</mx:VBox>
+	
+</mx:TitleWindow>

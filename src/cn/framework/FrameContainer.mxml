@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:esri="http://www.esri.com/2008/ags" xmlns:utils="cn.framework.utils.*" xmlns:components="cn.framework.components.*" xmlns:Navigation="cn.framework.widgets.Navigation.*" xmlns:flexiframe="com.google.code.flexiframe.*" creationComplete="init(event)" keyDown="logokeyDown(event)" fontSize="12">
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.IBaseWidget;
+			import cn.framework.manager.ConfigManager;
+			import cn.framework.manager.ServiceManager;
+			import cn.framework.skin.AppSkin;
+			import cn.framework.utils.Hashtable;
+			import cn.framework.utils.HtmlUtil;
+			import cn.framework.utils.WMTSLayer;
+			import cn.framework.widgets.LoginPop;
+			import cn.framework.widgets.Navigation.NavToolItem;
+			
+			import com.esri.ags.Map;
+			import com.esri.ags.SpatialReference;
+			import com.esri.ags.events.MapMouseEvent;
+			import com.esri.ags.geometry.Extent;
+			import com.esri.ags.geometry.Geometry;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.utils.GeometryUtil;
+			import com.esri.ags.utils.WebMercatorUtil;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.IVisualElement;
+			import mx.events.CloseEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.events.ModuleEvent;
+			import mx.managers.PopUpManager;
+			import mx.modules.IModuleInfo;
+			import mx.modules.ModuleManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			import spark.core.IDisplayText;
+			
+			public var configManager:ConfigManager
+			public var serviceManager:ServiceManager;
+			private static var m_instance:FrameContainer;
+			[Bindable]
+			private var loginSuccess:Boolean = false;
+			[Bindable]
+			public var map:Map;
+			
+			public static function getInstance():FrameContainer
+			{
+				return m_instance;
+			}
+			
+			
+			private var isExpand:Boolean = true;
+			protected function expand(event:MouseEvent):void
+			{
+				if(isExpand)
+				{
+					leftContent.visible = false;
+					leftContent.includeInLayout = false;
+					img.source = "assets/main/plush.png";
+					isExpand = false;
+				}				
+				else
+				{
+					leftContent.visible = true;
+					leftContent.includeInLayout = true;
+					img.source = "assets/main/push.png";
+					isExpand= true;
+				}
+			}
+			
+			protected function logokeyDown(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode == Keyboard.ESCAPE)
+				{
+					logoCanvas.visible = true;
+					logoCanvas.includeInLayout = true;
+				}
+			}
+			
+			public function logoVisible():void
+			{
+				if(logoCanvas.visible)
+				{
+					logoCanvas.visible = false;
+					logoCanvas.includeInLayout = false;
+				}
+				else
+				{
+					logoCanvas.visible = true;
+					logoCanvas.includeInLayout = true;
+				}
+			}
+			
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				img.visible = true;
+				if(isExpand)
+				{
+					leftContent.visible = false;
+					leftContent.includeInLayout = false;
+					img.source = "assets/main/plush.png";
+					isExpand = false;
+				}				
+				else
+				{
+					leftContent.visible = true;
+					leftContent.includeInLayout = true;
+					img.source = "assets/main/push.png";
+					isExpand= true;
+				}
+			}
+			
+			
+			protected function rotateEffect_effectStartHandler(event:EffectEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+			
+			private var wgtInfo:IModuleInfo;
+			protected function init(event:FlexEvent):void
+			{
+				m_instance = this;
+				
+				var httpservice:HTTPService = new HTTPService;
+				httpservice.url = "config.xml";
+				httpservice.resultFormat = "e4x";
+				httpservice.addEventListener(ResultEvent.RESULT,configResultHandler);
+				httpservice.send();
+				// TODO Auto-generated method stub
+				
+
+				
+				wgtInfo = ModuleManager.getModule("cn/framework/widgets/QueryWidget.swf");
+				wgtInfo.addEventListener(ModuleEvent.READY, widgetReadyHandler);
+				wgtInfo.addEventListener(ModuleEvent.ERROR, moduleErrorHandler);
+				wgtInfo.load();
+				
+				
+			}
+			
+			private function loadModule(moudleURL:String):void
+			{
+				this.panel.removeAllChildren();
+				if(widgetTable.find(moudleURL)==null)
+				{
+					wgtInfo = ModuleManager.getModule(moudleURL);
+					wgtInfo.addEventListener(ModuleEvent.READY, widgetReadyHandler);
+					wgtInfo.addEventListener(ModuleEvent.ERROR, moduleErrorHandler);
+					wgtInfo.load();
+				}
+				else
+				{
+					this.panel.addChild(widgetTable.find(moudleURL) as DisplayObject);
+				}
+			}
+			
+			private function loadManagerConsole():void
+			{
+				wgtInfo = ModuleManager.getModule("cn/framework/widgets/UserManagerWidget.swf");
+				wgtInfo.addEventListener(ModuleEvent.READY, widgetReadyHandler_viewStack);
+				wgtInfo.addEventListener(ModuleEvent.ERROR, moduleErrorHandler);
+				wgtInfo.load();
+			}
+			
+			private function configResultHandler(event:ResultEvent):void
+			{
+				var configXML:XML = event.result as XML;
+				configManager = new ConfigManager;
+				configManager.configXML = configXML;
+				serviceManager = new ServiceManager;
+				serviceManager.servletcontext = configXML.servletcontext;
+				serviceManager.serviceURL = serviceManager.servletcontext + serviceManager.serviceURL;
+				
+				map = new Map;
+				this.map.logoVisible = false;
+				this.map.zoomSliderVisible = false;
+				this.map.doubleClickEnabled = true;
+				this.map.addEventListener(MapMouseEvent.MAP_CLICK,map_mapClickHandler);
+				var initxmin:Number = configXML.initextent.@xmin;
+				var initymin:Number = configXML.initextent.@ymin;
+				var initxmax:Number = configXML.initextent.@xmax;
+				var initymax:Number = configXML.initextent.@ymax;
+				var initwkid:Number = configXML.initextent.@wkid;
+				var initextent:Extent = new Extent(initxmin,initymin,initxmax,initymax,new SpatialReference(initwkid));
+				this.map.extent = initextent;
+				
+				var layers:XMLList = configXML..layer;
+				for each(var ly:XML in layers)
+				{
+					var baseUrl:String = ly.@url;
+					var visi:String = ly.@visible;
+					
+					var wmtslayer:WMTSLayer = new WMTSLayer;
+					wmtslayer.baseUrl = baseUrl;
+					wmtslayer.visible = visi=="true"?true:false;
+					wmtslayer.id = ly.@id;
+					wmtslayer.name = ly.@id;
+					this.map.addLayer(wmtslayer);
+				}
+				this.mapContent.addChildAt(map,0);
+				
+				var RedLiningGraphicsLayer:GraphicsLayer=new GraphicsLayer;
+				RedLiningGraphicsLayer.name="RedLiningGraphicsLayer";
+				RedLiningGraphicsLayer.id="RedLiningGraphicsLayer";
+				this.map.addLayer(RedLiningGraphicsLayer);
+				var resultGraphicsLayer:GraphicsLayer=new GraphicsLayer;
+				resultGraphicsLayer.id="resultLayer";
+				resultGraphicsLayer.name="resultLayer";
+				this.map.addLayer(resultGraphicsLayer);
+				
+				navtool.map = this.map;
+				navtool.panwheelItem=new NavToolItem("PanWheel", "", true);
+				navtool.zoomFullextItem=new NavToolItem("全图", "assets/images/i_globe.png", true);
+				navtool.pandownItem=new NavToolItem("下移", "", true);
+				navtool.panleftItem=new NavToolItem("左移", "", true);
+				navtool.panrightItem=new NavToolItem("右移", "", true);
+				navtool.panupItem=new NavToolItem("上移", "", true);
+				navtool.prevextItem=new NavToolItem("前一视图", "", true);
+				navtool.nextextItem=new NavToolItem("后一视图", "", true);
+				navtool.initButtonBar();
+				
+				this.overviewMap.map = this.map;
+			}
+			
+			private var widgetTable:Hashtable = new Hashtable();
+			private function widgetReadyHandler(event:ModuleEvent):void
+			{
+				var moduleInfo:IModuleInfo = event.module;
+				var infoWidget:IBaseWidget = moduleInfo.factory.create() as IBaseWidget;
+				infoWidget.map = this.map;
+				this.panel.addChild(infoWidget as DisplayObject);
+				widgetTable.add(moduleInfo.url,infoWidget);
+			}
+			
+			private function widgetReadyHandler_viewStack(event:ModuleEvent):void
+			{
+				var moduleInfo:IModuleInfo = event.module;
+				var infoWidget:IBaseWidget = moduleInfo.factory.create() as IBaseWidget;
+				infoWidget.map = this.map;
+				this.managerConsole.addChild(infoWidget as DisplayObject);
+//				var navi:NavigatorContent = this.viewStack.getChildByName("managerConsole") as NavigatorContent;
+//				navi.addElement(infoWidget as IVisualElement);
+				widgetTable.add(moduleInfo.url,infoWidget);
+			}
+			
+			private function moduleErrorHandler(event:ModuleEvent):void
+			{
+				Alert.show(event.errorText);
+				cursorManager.removeBusyCursor();
+			}
+			
+			protected function map_mapClickHandler(event:MapMouseEvent):void
+			{
+				if(event.altKey ==true && event.ctrlKey == true)
+				{
+					Alert.show(event.mapPoint.x +"," + event.mapPoint.y);
+				}
+				else if(event.altKey==true)
+				{
+					Alert.show(map.extent.xmin+","+map.extent.ymin+","+map.extent.xmax+","+map.extent.ymax);
+				}
+			}
+			
+			
+			protected function menuclickHandler(event:MouseEvent,index:int):void
+			{
+				
+				// TODO Auto-generated method stub
+				ToggleButton1.selected =false;
+				ToggleButton2.selected =false;
+				ToggleButton3.selected =false;
+				ToggleButton4.selected = false;
+				ToggleButton5.selected = false;
+//				ToggleButton6.selected = false;
+				var button:ToggleButton = event.currentTarget as ToggleButton;
+				if(button)
+					button.selected =true;
+				var moudleURL:String;
+				if(index == 1) 
+				{
+					viewStack.selectedIndex = 0;
+					leftContent.visible = true;
+					leftContent.includeInLayout = true;
+					loadModule("cn/framework/widgets/QueryWidget.swf");
+					
+					clearGraphics();
+				}
+				else if(index == 2) 
+				{
+					viewStack.selectedIndex = 0;
+					leftContent.visible = true;
+					leftContent.includeInLayout = true;
+					
+					loadModule("cn/framework/widgets/DrawWidget.swf");
+				}
+				else if(index == 3)
+				{
+					viewStack.selectedIndex = 0;
+					leftContent.visible = true;
+					leftContent.includeInLayout = true;
+					
+					//					navigateToURL(new URLRequest("resource/zhaoshang/xunchuance.htm"),"_blank");
+				}
+				else if(index == 4)
+				{
+					this.viewStack.selectedIndex = 1;
+					
+					if(widgetTable.find("cn/framework/widgets/UserManagerWidget.swf")==null)
+					{
+						loadManagerConsole();
+					}
+				}
+				else if(index == 5)
+				{
+					viewStack.selectedIndex = 0;
+					leftContent.visible = true;
+					leftContent.includeInLayout = true;
+					loadModule("cn/framework/widgets/RouteWidget.swf");
+				}
+				else
+					return;
+			}
+			
+			public function setIframeVisible(percentHeight:int):void
+			{
+			}
+			
+			protected function iframe_mouseOverHandler(event:MouseEvent):void
+			{
+				
+			}
+			
+			protected function managerConsole_addedToStageHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				cursorManager.setBusyCursor();
+
+			}
+			
+			////////////////////////////后台登陆/////////////////////////////////////
+			private var loginPop:LoginPop;
+			protected function loginClick(event:ItemClickEvent):void
+			{
+				setIframeVisible(0);
+				// TODO Auto-generated method stub
+				switch(event.index)
+				{
+					case 0:
+						login();
+						break;
+					case 1:
+						ExternalInterface.call("favorite_home");
+						break;
+				}
+			}
+			
+			[Bindable]
+			private var linkArray:ArrayCollection = new ArrayCollection([{label:"登录"},{label:"收藏"}]);
+			//登录
+			private function login():void
+			{
+				if(this.loginSuccess == false)
+				{
+					if(loginPop==null)
+					{
+						loginPop = PopUpManager.createPopUp(this.parentApplication.parent,LoginPop,true) as LoginPop;
+						loginPop.addEventListener("LOGIN_SUCCESS",loginSuccessHandler);
+					}
+					PopUpManager.centerPopUp(loginPop);
+					loginPop.visible = true;
+				}
+				else
+				{
+					Alert.show("确定退出登录?","提示",Alert.YES|Alert.NO,this,logOffHandler);
+				}
+			}
+			
+			//退出登录
+			private function logOffHandler(event:CloseEvent):void
+			{
+//				if(event.detail == Alert.YES)
+//				{
+//					this.loginSuccess = false;
+//					linkArray.getItemAt(0).label = "登录";
+//					this.viewStack.selectedIndex = 0;
+//					linkBar.dataProvider= linkArray;
+//				}
+			}
+			
+			//登录成功事件
+			private function loginSuccessHandler(event:Event):void
+			{
+				this.loginSuccess = true;
+				ToggleButton1.selected =false;
+				ToggleButton2.selected =false;
+				ToggleButton3.selected =false;
+				ToggleButton4.selected = true;
+				
+				this.viewStack.selectedIndex = 3;
+				if(widgetTable.find("cn/framework/widgets/UserManagerWidget.swf")==null)
+				{
+					loadManagerConsole();
+				}
+				linkArray.getItemAt(0).label = "退出";
+//				linkBar.dataProvider= linkArray;
+			}
+			/////////////////////////////////////////////////////////////////////////////////////////
+			
+			
+			private function clearGraphics():void
+			{
+				var pathpointlayer:GraphicsLayer = this.map.getLayer("pathpointlayer") as GraphicsLayer;
+				var pathlayer:GraphicsLayer = this.map.getLayer("pathlayer")  as GraphicsLayer;
+				
+				if(pathpointlayer!=null)
+					pathpointlayer.clear();
+				if(pathlayer!=null)
+					pathlayer.clear();
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Rotate3D id="rotateEffect" target="{leftContent}"  
+					angleXFrom="0.0" angleXTo="0" 
+					angleYFrom="0.0" angleYTo="-360" 
+					angleZFrom="0.0" angleZTo="0"
+					duration="1000"
+					repeatCount="1"
+					effectStart="rotateEffect_effectStartHandler(event)" effectEnd="rotateEffect_effectEndHandler(event)"/>
+		
+		<s:Move3D id="moveEffect" target="{leftContent}" 
+				  xFrom="0" xBy="-300" 
+				  yFrom="0" yBy="0" 
+				  zFrom="0" zBy="0"
+				  duration="500"
+				  repeatCount="1"
+				  effectStart="this.leftContent.alpha=.7" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<s:VGroup width="100%" height="100%" gap="0" >
+		<!--logo区域-->
+		<mx:Canvas id="logoCanvas" width="100%" height="75" horizontalScrollPolicy="off" verticalScrollPolicy="off"  backgroundColor="#eeeeee"  backgroundImage="assets/main/top_bg.png" backgroundSize="100%">
+			<mx:HBox verticalAlign="middle" height="100%" verticalGap="0" horizontalGap="0" width="100%" paddingLeft="0">
+				<mx:Image source="assets/main/top_left.png" />
+			</mx:HBox>
+			<s:HGroup top="0" right="8" gap="5">
+				<s:Image source="assets/main/top_right_yline.png"/>
+				<s:ToggleButton id="ToggleButton2" click="menuclickHandler(event,1)" width="66" height="75" styleName="rfgcButton" selected="true" useHandCursor="true" buttonMode="true"/>
+				<s:Image source="assets/main/top_right_yline.png"/>
+				<s:ToggleButton id="ToggleButton1" click="menuclickHandler(event,2)" width="66" height="75" styleName="zbcxButton" useHandCursor="true" buttonMode="true"/>
+				<s:Image source="assets/main/top_right_yline.png"/>
+				<s:ToggleButton id="ToggleButton3" click="menuclickHandler(event,3)" width="66" height="75" styleName="sjtjButton" useHandCursor="true" buttonMode="true"/>
+				<s:Image source="assets/main/top_right_yline.png"/>
+				<s:ToggleButton  id="ToggleButton4" click="menuclickHandler(event,4)" width="66" height="75" styleName="dtscButton" useHandCursor="true" buttonMode="true"/>
+				<s:Image source="assets/main/top_right_yline.png" visible="{loginSuccess}"  includeInLayout="{loginSuccess}"/>
+				<s:ToggleButton visible="{loginSuccess}" includeInLayout="{loginSuccess}" id="ToggleButton5" width="66" height="75" styleName="htglButton" click="menuclickHandler(event,5)" useHandCursor="true" buttonMode="true"/>
+			</s:HGroup>
+		</mx:Canvas>
+		
+		<mx:ViewStack  width="100%" height="100%" id="viewStack">
+		    <mx:HBox verticalGap="0" horizontalGap="0" width="100%" height="100%">
+			<mx:VBox id="leftContent" width="300" height="100%" paddingTop="0" visible="true" includeInLayout="true">
+				<mx:Panel id="panel" width="100%" height="100%"  titleStyleName="titleStyle"  paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0"  borderStyle="solid" borderThickness="1" borderThicknessBottom="0" borderThicknessLeft="0" borderThicknessRight="0" borderThicknessTop="0" headerColors="[0xFFF9E8,0xFFF5E4]"   title="查询定位" cornerRadius="0">
+				</mx:Panel>
+			</mx:VBox>
+			<!--右边栏-->
+			<mx:Canvas  id="mapContent" width="100%" height="100%">
+				<mx:ViewStack   width="100%" height="100%">
+					<!--地图主控件-->
+					<mx:Canvas width="100%" height="100%">
+
+						<s:Group top="10" left="90">
+							<components:Toolbar map="{map}"/>
+						</s:Group>
+						<Navigation:Navigation left="10" top="10" id="navtool"
+											   >
+						</Navigation:Navigation>
+						<components:BaseTools map="{this.map}" right="10" top="10" toolTip="切换地图"/>
+						<components:OverviewMapComponent id="overviewMap" right="5" bottom="5" currentState=""/>
+						<!--展开/隐藏-->
+						<mx:VBox height="100%" left="0" width="10"  horizontalGap="0" verticalAlign="middle">
+							<mx:Image id="img"  source="assets/main/push.png" buttonMode="true" useHandCursor="true" click="expand(event)"/>
+						</mx:VBox>
+					</mx:Canvas>
+				</mx:ViewStack>
+			</mx:Canvas>
+		</mx:HBox>
+		<mx:HBox  name="managerConsole" id="managerConsole" >
+			
+		</mx:HBox>
+		</mx:ViewStack>
+	</s:VGroup>
+</s:Group>

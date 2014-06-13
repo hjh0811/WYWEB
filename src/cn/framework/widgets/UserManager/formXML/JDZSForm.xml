@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<configuration  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx" width="920" height="560">
+	<form width="430" useMap="true">
+			<s:Label x="15" y="31" text="酒店名称"/>
+			<s:TextInput x="68" y="26" width="329" text="name" height="22"/>
+			<s:Label x="15" y="96" text="酒店等级"/>
+			<s:TextInput x="68" y="91" width="329" text="jddj" height="22"/>
+			<s:Label x="15" y="62" text="酒店地址"/>
+			<s:TextInput x="68" y="57" width="329" text="dz" height="22"/>
+			<s:Label x="15" y="130" text="联系电话"/>
+			<s:TextInput x="68" y="125" width="329" text="dh" height="22"/>
+			<s:Label x="39" y="161" text="传真"/>
+			<s:TextInput x="68" y="156" width="329" text="cz" height="22"/>
+			<s:TextArea x="68" y="188" height="164" width="329" text="js"/>
+			<s:Label x="39" y="191" text="介绍"/>
+			<s:Label x="39" y="368" text="网址"/>
+			<s:TextInput x="68" y="363" width="329"  text="wz"/>
+			<s:Label x="31" y="398" text="X坐标"/>
+			<s:TextInput x="68" y="393" width="138" enabled="false" text="x"/>
+			<s:Label x="225" y="398" text="Y坐标"/>
+			<s:TextInput x="260" y="393" width="138" enabled="false" text="y"/>
+	</form>
+</configuration>

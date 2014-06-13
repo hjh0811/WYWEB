@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:supportClasses="com.esri.ags.skins.supportClasses.*" width="400" height="300">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.FrameContainer;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.collections.ArrayCollection;
+			public var servletContext:String;
+			private var _infoData:ArrayCollection;
+			
+			public function set infoData(jsonObject:ArrayCollection):void
+			{
+				this._infoData = jsonObject;
+				FrameContainer.getInstance().setIframeVisible(0);
+//				img1.source = "http://m.weather.com.cn/img/b" + jsonObject["weatherinfo"]["img1"] +".gif"
+//				img1.source = "http://m.weather.com.cn/weather_img_png/" + jsonObject["weatherinfo"]["img1"] +".png"
+//				md1.text=jsonObject["weatherinfo"]["temp1"];
+//				img_title_single1.text=jsonObject["weatherinfo"]["img_title1"];
+//				
+//				img2.source = "http://m.weather.com.cn/weather_img_png/" + jsonObject["weatherinfo"]["img3"] +".png";
+//				md2.text=jsonObject["weatherinfo"]["temp2"];
+//				img_title_single2.text=jsonObject["weatherinfo"]["img_title2"];
+//				
+//				img3.source = "http://m.weather.com.cn/weather_img_png/" + jsonObject["weatherinfo"]["img5"] +".png";
+//				md3.text=jsonObject["weatherinfo"]["temp3"];
+//				img_title_single3.text=jsonObject["weatherinfo"]["img_title3"];
+				day1.text = jsonObject[7].toString().split(" ")[0];
+				img1.source = this.servletContext + "images/weather/b_" + jsonObject[10];
+				md1.text= jsonObject[7].toString().split(" ")[1];
+				img_title_single1.text=jsonObject[8];
+				
+				day2.text = jsonObject[12].toString().split(" ")[0];
+				img2.source = this.servletContext + "images/weather/b_" + jsonObject[15];
+				md2.text=jsonObject[12].toString().split(" ")[1];
+				img_title_single2.text=jsonObject[13];
+				
+				day3.text = jsonObject[17].toString().split(" ")[0];
+				img3.source = this.servletContext + "images/weather/b_" + jsonObject[20];
+				md3.text=jsonObject[17].toString().split(" ")[1];
+				img_title_single3.text=jsonObject[18];
+				
+//				day4.text = jsonObject[22].toString().split(" ")[0];
+//				img4.source = this.servletContext + "images/weather/b_" + jsonObject[25];
+//				md4.text= jsonObject[22].toString().split(" ")[1];
+//				img_title_single4.text=jsonObject[23];
+//				
+//				day5.text = jsonObject[27].toString().split(" ")[0];
+//				img5.source = this.servletContext + "images/weather/b_" + jsonObject[30];
+//				md5.text=jsonObject[27].toString().split(" ")[1];
+//				img_title_single5.text=jsonObject[28];
+			}
+
+			protected function hgroup_rollOutHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.visible = false;
+				FrameContainer.getInstance().setIframeVisible(100);
+				
+			}
+
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				navigateToURL(new URLRequest("http://www.weather.com.cn/weather/101280205.shtml"),"_blank");
+			}
+
+		]]>
+	</fx:Script>
+	<s:BorderContainer right="0" top="0" id="group" visible="true" borderStyle="inset" cornerRadius="5" rollOut="hgroup_rollOutHandler(event)">
+		<s:layout>
+			<s:VerticalLayout gap="0"/>
+		</s:layout>
+		<s:backgroundFill>
+			<s:SolidColor 
+				color="white" 
+				alpha="1"/> 
+		</s:backgroundFill>
+		<s:HGroup paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" gap="8">
+			<s:VGroup horizontalAlign="center" gap="15" width="90">
+				<s:Label id="day1" text="" fontWeight="bold"/>
+				<mx:Image id="img1"/>
+				<s:Label id="md1" />
+				<s:Label id="img_title_single1"/>
+			</s:VGroup>
+			<s:VGroup horizontalAlign="center" gap="15" width="90">
+				<s:Label id="day2" fontWeight="bold"/>
+				<mx:Image id="img2"/>
+				<s:Label id="md2" />
+				<s:Label id="img_title_single2" />
+			</s:VGroup>
+			<s:VGroup horizontalAlign="center" gap="15" width="90">
+				<s:Label id="day3"  fontWeight="bold"/>
+				<mx:Image id="img3"/>
+				<s:Label id="md3" />
+				<s:Label id="img_title_single3" />
+			</s:VGroup>
+			<!--<s:VGroup horizontalAlign="center" gap="15" width="100">
+				<s:Label id="day4"  fontWeight="bold"/>
+				<mx:Image id="img4"/>
+				<s:Label id="md4" />
+				<s:Label id="img_title_single4" />
+			</s:VGroup>
+			<s:VGroup horizontalAlign="center" gap="15" width="100">
+				<s:Label id="day5"  fontWeight="bold"/>
+				<mx:Image id="img5"/>
+				<s:Label id="md5" />
+				<s:Label id="img_title_single5" />
+			</s:VGroup>-->
+		</s:HGroup>	
+		<mx:HRule width="100%"  height="1"/>
+		<s:HGroup paddingLeft="10">
+			<mx:LinkButton label="未来七天预报" click="linkbutton1_clickHandler(event)"/>
+		</s:HGroup>
+		
+	</s:BorderContainer>
+	<s:filters>
+		<s:DropShadowFilter alpha="0.5"
+							blurX="10" angle="135"
+							blurY="10"/>
+	</s:filters>
+</s:Group>

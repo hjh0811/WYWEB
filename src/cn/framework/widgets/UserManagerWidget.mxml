@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<framework:BaseWidget xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:framework="cn.framework.*"
+		   xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="init()" fontSize="12"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"  width="100%" height="100%" xmlns:UserManager="cn.framework.widgets.UserManager.*">
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.components.treeview.render.IconItemRender;
+			import cn.framework.utils.IconUtility;
+			import cn.framework.widgets.UserManager.FormList;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				var httpservice:HTTPService = new HTTPService;
+				httpservice.url = "cn/framework/widgets/UserManagerWidget.xml";
+				httpservice.resultFormat = "e4x";
+				httpservice.method = "GET";
+				httpservice.addEventListener(ResultEvent.RESULT, configHandler);
+				httpservice.send();
+			}
+			
+			[Bindable]
+			private var treeXml:XML;
+			private function configHandler(event:ResultEvent):void
+			{
+				var xml:XML = event.result as XML;
+				treeXml = XML(xml.tree);
+				tree.dataProvider = treeXml;
+				tree.callLater(expandTree);
+				tree.selectedIndex = 0;
+				
+				var formlist:FormList = new FormList;
+				this.borderContainer.addElement(formlist);
+				formlist.configXML = XML(xml.tree.node[0]);
+			}
+			
+			
+			private function expandTree():void{  
+				tree.expandChildrenOf(treeXml , true);  
+			}
+
+
+			protected function tree_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+
+			}
+
+
+			private var formList:FormList;
+			protected function tree_itemClickHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				var item:Object = event.currentTarget.selectedItem;
+				var nonSelectable:Boolean = ((item.hasOwnProperty("@clickable")) && (item.(@clickable == "false")));
+				if (nonSelectable) {
+					tree.selectedItem = null;
+				}
+				
+				if(tree.selectedItem!=null)
+				{
+					var xml:XML = tree.selectedItem as XML;
+//					borderContainer.removeAllElements();
+					
+					
+					var table:String = xml.@table;
+					if(table == null ||　table=="") return;
+					
+					if(formList==null)
+					{
+						formList = new FormList;
+						borderContainer.addElement(formList);
+					}
+					formList.configXML = xml;
+				}
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:VBox width="250" height="100%">
+			<mx:Tree id="tree" width="100%"  height="100%" labelField="@label" showRoot="false" itemClick="tree_itemClickHandler(event)" change="tree_changeHandler(event)"
+					itemRenderer="cn.framework.components.treeview.render.IconItemRender" >
+				
+			</mx:Tree>
+		</mx:VBox>
+		<s:BorderContainer id="borderContainer" width="100%" height="100%" borderStyle="solid">
+			<s:backgroundFill>
+				<s:SolidColor 
+					alpha="0"/> 
+			</s:backgroundFill>
+		</s:BorderContainer>	
+	</mx:HDividedBox>
+</framework:BaseWidget>

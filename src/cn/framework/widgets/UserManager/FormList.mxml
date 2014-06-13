@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  xmlns:flexiframe="com.google.code.flexiframe.*" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  width="100%" height="100%" xmlns:UserManager="cn.framework.widgets.UserManager.*" >
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.FrameContainer;
+			import cn.framework.manager.ServiceManager;
+			import cn.framework.utils.HtmlUtil;
+			
+			import com.google.code.flexiframe.IFrame;
+			
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.effects.Move;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			private var _configXML:XML;
+			private var m_Model:String = "new"; //new or edit
+			[Bindable]
+			private var bindingObj:Object;
+			
+			[Bindable]
+			private var canEditable:Boolean = false;
+			private var formType:String = "flex";
+			[Bindable]
+			private var columns:Array;
+			[Bindable]
+			private var values:Array;
+			[Bindable]
+			private var htmlURL:String;
+			[Bindable]
+			private var countStr:String = "";
+			[Bindable]
+			private var listVisible:Boolean = true;
+			
+			public function set configXML(value:XML):void
+			{
+//				if(this.containViewStack!=null)
+//					this.containViewStack.selectedIndex = 0;
+				this._configXML = value;
+
+				if(this._configXML==null) return;
+				
+				var columnStr:String = _configXML.@column;
+				var columnArray:Array = columnStr.split(";");
+				columns = new Array;
+									
+				for each(var fieldStr:String in columnArray)
+				{
+					var dataColumn:DataGridColumn = new DataGridColumn;
+					dataColumn.headerText = fieldStr.split(":")[0];
+					dataColumn.dataField = fieldStr.split(":")[1];
+					columns.push(dataColumn);
+				}
+				
+				if(_configXML.@formXML!=null && _configXML.@formXML!="")
+				{
+					canEditable = true;
+				}
+				
+				formType = _configXML.@formtype;
+				if(dataGrid!=null)
+					dataGrid.columns = columns;
+
+				loadData();
+				
+				this.currentState = "main";
+				
+				iframe.back.addEventListener(MouseEvent.CLICK, backHandler);
+			}
+			
+			//加载或刷新数据
+			private  function loadData():void
+			{
+				
+				var tableID:String = _configXML.@table;
+				var params:Object = {t: tableID};
+				FrameContainer.getInstance().serviceManager.getDataByService(params, listDataHandler, "POST");
+			}
+			
+			private function listDataHandler(event:ResultEvent):void
+			{
+//				Alert.show(event.result.toString());
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null) return; 	
+				
+				var jsonValues:Array =  jsonObject["values"];
+				
+				values = jsonValues;
+				countStr = "共" + jsonValues.length + "条";
+				
+				if(dataGrid!=null)
+				{
+					dataGrid.dataProvider = values;
+				}
+				if(countLabel!=null)
+				{
+					countLabel.text = "共" + jsonValues.length + "条";
+				}
+			}	
+				
+
+			//新建表单
+			protected function newForm(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				m_Model = "new";
+				if(formType=="flex")
+				{
+					getFormXML();
+				}
+				else if(formType=="html")
+				{
+					this.currentState = "edit";
+					showHtmlEditor();
+				}
+			}
+			
+//			private var iframe:IFrame = null;
+//			private function showHtmlEditor():void
+//			{
+//				
+//				var editorURL:String =  _configXML.@formXML;
+//				htmlURL = FrameContainer.getInstance().serviceManager.servletcontext + editorURL;
+//				
+//				if(iframe == null)
+//				{
+//					iframe = new IFrame;
+//					iframe.id = "richHtmlIframe";
+//					iframe.percentWidth = 100;
+//					iframe.percentHeight = 100;
+//					this.containViewStack.addChildAt(iframe);
+//					iframe.addEventListener(MouseEvent.MOUSE_OVER, iframeMouseOverHandler);
+//				}
+//				iframe.source = htmlURL;
+//				HtmlUtil.iframeShow(iframe.id);
+//				this.containViewStack.selectedIndex = 1;
+//			}
+//			private var iframe:IframeContent = null;
+			private function showHtmlEditor():void
+			{ 
+				var editorURL:String =  _configXML.@formXML;
+				if(m_Model=="new")
+				{
+					htmlURL = FrameContainer.getInstance().serviceManager.servletcontext + editorURL;
+				}
+				else
+				{
+					htmlURL = FrameContainer.getInstance().serviceManager.servletcontext + editorURL + "?id=" + bindingObj.id + "&m=" + m_Model;
+				}
+//				if(iframe == null)
+//				{
+//					iframe = new IframeContent;
+//					iframe.percentWidth = 100;
+//					iframe.percentHeight = 100;
+//					this.addElement(iframe);
+//				}
+//				this.listVisible = false;
+				iframe.init(htmlURL);
+//				this.containViewStack.selectedIndex = 1;
+			}
+			
+//			private function iframeMouseOverHandler(event:MouseEvent):void
+//			{
+//				HtmlUtil.iframeShow(iframe.id);
+//			}
+			
+			private function backHandler(event:MouseEvent):void
+			{
+//				listVisible = true;
+				this.currentState = "main";
+				loadData();
+//				this.containViewStack.selectedIndex = 0;
+			}
+			
+			private function getFormXML():void
+			{
+				var formConfig:String =  _configXML.@formXML;
+				if(formConfig==null || formConfig == "") return;
+				var httpservice:HTTPService = new HTTPService;
+				httpservice.url = formConfig;
+				httpservice.resultFormat = "e4x";
+				httpservice.method = "GET";
+				httpservice.addEventListener(ResultEvent.RESULT,FormConfigHandler);
+				httpservice.addEventListener(FaultEvent.FAULT,faultHandler);
+				httpservice.send();
+			}
+			
+			private var formXML:XML = null
+			private function FormConfigHandler(event:ResultEvent):void
+			{
+				var xml:XML = event.result as XML;
+				formXML = xml;
+				
+				if(this.m_Model == "new")
+					showForm({id:-10000});  //id为-1的即为新对象
+				else
+					showForm(this.bindingObj);
+			}
+			
+			private function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.fault.toString());
+			}
+
+
+			protected function edit():void
+			{
+				// TODO Auto-generated method stub
+				m_Model = "edit";
+				if(dataGrid.selectedItem!=null)
+				{
+					this.bindingObj = dataGrid.selectedItem;
+					
+					if(formType=="flex")
+					{
+						getFormXML();
+					}
+					else if(formType=="html")
+					{
+						this.currentState = "edit";
+						showHtmlEditor();
+					}
+				}
+
+			}
+			
+			private function deleteRecord():void
+			{
+				Alert.show("确定删除所选中的数据?","提示",Alert.YES|Alert.CANCEL,this.parentApplication.parent,closeHandler);
+			}
+			
+			private function closeHandler(event:CloseEvent):void
+			{
+				this.bindingObj = dataGrid.selectedItem;
+				if(event.detail == Alert.YES)
+				{
+					var params:Object = {t:_configXML.@del,id:bindingObj.id};
+					FrameContainer.getInstance().serviceManager.getDataByService(params,deleteHandler,"POST");
+				}
+			}
+			
+			private function deleteHandler(event:ResultEvent):void
+			{
+				loadData();
+			}
+			
+			private var moveAction:Move = new Move
+			private function showForm(obj:Object):void
+			{
+				moveAction.yTo = 100;
+				var form:Form = new Form;
+				PopUpManager.addPopUp(form,this.parentApplication.parent,true);
+				form.width = this.formXML.@width;
+				form.height = this.formXML.@height;
+				PopUpManager.centerPopUp(form);
+				form.m_Model = this.m_Model;
+				form.m_formXML = this.formXML;
+
+				form.getFormData(obj.id,_configXML);
+				form.addEventListener("Reflash", reflashHandler);
+				
+//				moveAction.play([form]);
+			}
+			//刷新事件
+			private function reflashHandler(event:Event):void
+			{
+				loadData();
+			}
+
+			private function back():void
+			{
+//				this.containViewStack.selectedIndex = 0;
+				listVisible = true;
+			}
+			
+			private function save():void
+			{
+				
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+		<s:states>
+			<s:State name="main"/>
+			<s:State name="edit"/>
+		</s:states>
+		<s:transitions>
+			<s:Transition autoReverse="true" toState="*">
+				<s:Fade  targets="{[main, iframe]}"/>
+			</s:Transition>
+		</s:transitions>
+		<!--<mx:ViewStack id="containViewStack" width="100%" height="100%">-->
+		<s:BorderContainer id="main" width="100%" height="100%"  visible.main="true" borderAlpha="0" includeInLayout.main="true">
+			<s:layout>
+				<s:VerticalLayout paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"/>
+			</s:layout>
+			<s:backgroundFill>
+				<s:SolidColor alpha="1" color="0xffffff"/>
+			</s:backgroundFill>
+			<s:HGroup includeInLayout="{canEditable}" visible="{canEditable}">
+					<mx:Button label="新增" icon="@Embed('assets/images/layer.png')" click="newForm(event)"/>
+					<mx:Button label="编辑" icon="@Embed('assets/images/layer.png')" click="edit()"/>
+					<mx:Button label="删除" icon="@Embed('assets/images/layer.png')" click="deleteRecord()"/>
+			</s:HGroup>
+			<mx:DataGrid id="dataGrid" dataProvider="{this.values}" columns="{this.columns}" width="100%" height="100%" doubleClick="edit()" doubleClickEnabled="true">
+			</mx:DataGrid>
+			<mx:Text id="countLabel" fontSize="12" text="{countStr}" width="100%" />
+		</s:BorderContainer>
+		<UserManager:IframeContent id="iframe" visible.edit="true"  visible="false" width="100%" height="100%" paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2">
+			
+		</UserManager:IframeContent>
+		<!--</mx:ViewStack>-->
+</s:Group>

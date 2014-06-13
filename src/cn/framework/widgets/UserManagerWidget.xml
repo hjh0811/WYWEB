@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<configuration>
+    <tree label="后台管理">
+        <node label="用户管理"  icon="assets/18x18/application_double.gif"  table="SYS_USER_1"  column="用户名:real_name;登录名:login_name;电子邮箱:email;联系方式:mobile" formtype="flex" formXML="cn/framework/widgets/UserManager/formXML/UserForm.xml" select="SYS_USER_2" update="SYS_USER_4" insert="SYS_USER_3" del="SYS_USER_5">
+        </node>
+        
+        <node label="数据管理" icon="assets/18x18/application_cascade.gif" clickable="false">
+            <node label="景点" icon="assets/18x18/application_view_gallery.gif"  table="LCMG01"  column="景点名称:name;地址:dz;门票价格:mpjg;营业时间:yysj;电话:dh;X坐标:x;Y坐标:y" formtype="flex"  formXML="cn/framework/widgets/UserManager/formXML/JDForm.xml" select="LC002" update="LCLY4" insert="LCLY3" del="LCLY5"/>
+            <node label="酒店" icon="assets/18x18/application_view_tile.gif" table="LCMG02"  column="酒店名称:name;地址:dz;X坐标:x;Y坐标:y" formtype="flex" formXML="cn/framework/widgets/UserManager/formXML/JDZSForm.xml" select="LC_JDZS_1" update="LC_JDZS_3" insert="LC_JDZS_2" del="LC_JDZS_4"/>
+            <node label="特产" icon="assets/18x18/application_view_icons.gif" table="LCMG03"  column="特产名称:name;位置:dz;等级:dj;X坐标:x;Y坐标:y" formtype="flex" formXML="cn/framework/widgets/UserManager/formXML/TCForm.xml" select="LC_TC_1" update="LC_TC_2" insert="LC_TC_3" del="LC_TC_4"/>
+            <node label="农家乐" icon="assets/18x18/application_side_boxes.gif"  table="LCMG04"  column="农家乐名称:name;地址:dz;建筑面积:mj;电话:dh;床位/餐位数:cws" formtype="flex" formXML="cn/framework/widgets/UserManager/formXML/NJLForm.xml" select="LC_NJL_1" update="LC_NJL_2" insert="LC_NJL_3" del="LC_NJL_4"/>
+        </node>
+        <node label="信息发布" icon="assets/18x18/application_cascade.gif" clickable="false">
+             <node label="节庆活动" icon="assets/18x18/application_view_gallery.gif"  table="LC_XXFB_01"  column="标题:title;发布状态:ispublic" formtype="html"  formXML="umeditor/editor.jsp" select="LC_XXFB_01" update="" insert="" del=""/>
+             <node label="优惠活动" icon="assets/18x18/application_view_gallery.gif"  table="LCMG01"  column="景点名称:name;地址:dz;门票价格:mpjg;营业时间:yysj;电话:dh;X坐标:x;Y坐标:y" formtype="html"  formXML="umeditor/editor.jsp" select="LC002" update="" insert="" del=""/>
+             <node label="招商信息" icon="assets/18x18/application_view_gallery.gif"  table="LCMG01"  column="景点名称:name;地址:dz;门票价格:mpjg;营业时间:yysj;电话:dh;X坐标:x;Y坐标:y" formtype="html"  formXML="umeditor/editor.jsp" select="LC002" update="" insert="" del=""/>
+        </node>
+    </tree>
+    
+    <table id="" >
+        
+    </table>
+</configuration>
