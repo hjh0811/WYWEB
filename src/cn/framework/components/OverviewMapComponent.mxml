@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     ////////////////////////////////////////////////////////////////////////////////
+     //
+     // Copyright (c) 2010-2011 ESRI
+     //
+     // All rights reserved under the copyright laws of the United States.
+     // You may freely redistribute and use this software, with or
+     // without modification, provided you include the original copyright
+     // and use restrictions.  See use restrictions in the file:
+     // <install location>/License.txt
+     //
+     ////////////////////////////////////////////////////////////////////////////////
+-->
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                      xmlns:s="library://ns.adobe.com/flex/spark"
+                      xmlns:mx="library://ns.adobe.com/flex/mx"
+                      xmlns:esri="http://www.esri.com/2008/ags"
+					  xmlns:extentMap="cn.framework.components.*"
+                      creationComplete="init()" xmlns:local="*" xmlns:utils="cn.framework.utils.*">
+    <!-- this component is used by the OverviewMapWidget -->
+    <fx:Script>
+        <![CDATA[
+			import cn.framework.FrameContainer;
+			
+			import com.esri.ags.SpatialReference;
+			
+			import cn.framework.utils.WMTSLayer;
+			
+			import com.esri.ags.Graphic;
+			import com.esri.ags.Map;
+			import com.esri.ags.events.ExtentEvent;
+			import com.esri.ags.events.MapEvent;
+			import com.esri.ags.geometry.Extent;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.layers.ArcGISDynamicMapServiceLayer;
+			import com.esri.ags.layers.ArcGISImageServiceLayer;
+			import com.esri.ags.layers.ArcGISTiledMapServiceLayer;
+			import com.esri.ags.layers.ArcIMSMapServiceLayer;
+			import com.esri.ags.layers.FeatureLayer;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.layers.Layer;
+			import com.esri.ags.layers.OpenStreetMapLayer;
+			import com.esri.ags.symbols.SimpleFillSymbol;
+			import com.esri.ags.symbols.SimpleLineSymbol;
+			import com.esri.ags.virtualearth.VETiledLayer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.events.EffectEvent;
+
+            private const lineSym:SimpleLineSymbol = new SimpleLineSymbol("solid", 0xFF0000, 0.7, 2);
+            private const currentExtentSym:SimpleFillSymbol = new SimpleFillSymbol("solid", 0xFF0000, 0.2, lineSym);
+
+            [Bindable]
+            private var _map:Map;
+//            public var configData:ConfigData;
+            public var openDefaultToolTip:String;
+            public var closeDefaultToolTip:String;
+
+            private var graphicsLayer:GraphicsLayer = new GraphicsLayer();
+            private var proxyUrl:String;
+            private var overviewGraphic:Graphic = new Graphic();
+            private var useBaseMapLayer:Boolean;
+            private var baseMapSwitched:Boolean;
+            private var currentBaseMapId:String;
+            private var hasOverviewGraphicBeenMoved:Boolean = false;
+            private var xOffset:Number;
+            private var yOffset:Number;
+
+            [Bindable]
+            private var openToolTip:String;
+            [Bindable]
+            private var closeToolTip:String;
+			[Bindable]
+			private var overviewMap:OverviewMap = new OverviewMap;
+			
+			public function set map(value:Map):void
+			{
+				this._map = value;
+				
+				overviewMap.mainMap = this._map;
+				
+				var configXML:XML = FrameContainer.getInstance().configManager.configXML;
+				var fullxmin:Number = configXML.fullextent.@xmin;
+				var fullymin:Number = configXML.fullextent.@ymin;
+				var fullxmax:Number = configXML.fullextent.@xmax;
+				var fullymax:Number = configXML.fullextent.@ymax;
+				var fullwkid:Number = configXML.fullextent.@wkid;
+				
+				var fullextent:Extent = new Extent(fullxmin,fullymin,fullxmax,fullymax,new SpatialReference(fullwkid));
+				overviewMap.extent = fullextent;
+				
+				var layers:XMLList = configXML..layer;
+				for each(var ly:XML in layers)
+				{
+					var baseUrl:String = ly.@url;
+					var visi:String = ly.@visible;
+					
+					var wmtslayer:WMTSLayer = new WMTSLayer;
+					wmtslayer.baseUrl = baseUrl;
+					wmtslayer.visible = visi=="true"?true:false;
+					wmtslayer.id = ly.@id;
+					wmtslayer.name = ly.@id;
+					this.overviewMap.addLayer(wmtslayer);
+					break;
+				}
+				
+				this.viewBox.addElementAt(overviewMap,0);
+			}
+
+            private function init():void
+            {
+                overviewGraphic.buttonMode = true;
+                toggleIcon.addEventListener(MouseEvent.CLICK, toggleIcon_clickHandler);
+                viewBox.setStyle("backgroundColor", FlexGlobals.topLevelApplication.getStyle("backgroundColor"));
+            }
+
+            private function toggleIcon_clickHandler(event:MouseEvent):void
+            {
+                currentState = (currentState == "collapsed") ? "expanded" : "collapsed";
+            }
+
+            private function updateOverviewExtentFromMap():void
+            {
+                overviewMap.extent = _map.extent.expand(3);
+                overviewGraphic.geometry = _map.extent;
+            }
+
+            private function updateMapExtentFromOverview():void
+            {
+				_map.extent = overviewGraphic.geometry as Extent;
+            }
+
+            private function map_extentChangeHandler(event:ExtentEvent):void
+            {
+                updateOverviewExtentFromMap();
+
+                //hide overview box if larger than overview map
+                if (!overviewMap.extent.contains(overviewGraphic.geometry))
+                {
+                    overviewGraphic.visible = false;
+                }
+                else
+                {
+                    overviewGraphic.visible = true;
+                }
+            }
+
+            private function overviewMap_loadHandler(event:MapEvent):void
+            {
+                graphicsLayer.name = "overviewMapGraphicsLayer";
+                graphicsLayer.symbol = currentExtentSym;
+                overviewMap.addLayer(graphicsLayer);
+
+                overviewGraphic.geometry = _map.extent;
+                overviewGraphic.addEventListener(MouseEvent.MOUSE_DOWN, overviewGraphic_mouseDownHandler);
+
+                //update map extent when mouse moves out of the overview map
+                overviewMap.addEventListener(MouseEvent.ROLL_OUT, overviewMap_mouseRollOutHandler);
+
+                graphicsLayer.add(overviewGraphic);
+
+				_map.addEventListener(ExtentEvent.EXTENT_CHANGE, map_extentChangeHandler);
+                updateOverviewExtentFromMap();
+            }
+
+            private function overviewMap_mouseRollOutHandler(event:MouseEvent):void
+            {
+                overviewMap.removeEventListener(MouseEvent.MOUSE_MOVE, overviewMap_mouseMoveHandler);
+                overviewGraphic.removeEventListener(MouseEvent.MOUSE_UP, overviewGraphic_mouseUpHandler);
+                overviewGraphic.addEventListener(MouseEvent.MOUSE_DOWN, overviewGraphic_mouseDownHandler);
+
+                if (hasOverviewGraphicBeenMoved)
+                {
+                    hasOverviewGraphicBeenMoved = false;
+                    updateMapExtentFromOverview();
+                }
+            }
+
+            private function overviewGraphic_mouseDownHandler(event:MouseEvent):void
+            {
+                overviewGraphic.removeEventListener(MouseEvent.MOUSE_DOWN, overviewGraphic_mouseDownHandler);
+                overviewGraphic.addEventListener(MouseEvent.MOUSE_UP, overviewGraphic_mouseUpHandler);
+                overviewMap.addEventListener(MouseEvent.MOUSE_MOVE, overviewMap_mouseMoveHandler);
+
+                var overviewCenterMapPoint:MapPoint = overviewGraphic.geometry.extent.center;
+                var mouseMapPoint:MapPoint = overviewMap.toMapFromStage(event.stageX, event.stageY);
+                xOffset = mouseMapPoint.x - overviewCenterMapPoint.x;
+                yOffset = mouseMapPoint.y - overviewCenterMapPoint.y;
+            }
+
+            private function overviewMap_mouseMoveHandler(event:MouseEvent):void
+            {
+                hasOverviewGraphicBeenMoved = true;
+
+                var overviewExtent:Extent = overviewGraphic.geometry as Extent;
+                var mouseMapPoint:MapPoint = overviewMap.toMapFromStage(event.stageX, event.stageY);
+                mouseMapPoint.x -= xOffset;
+                mouseMapPoint.y -= yOffset;
+
+                overviewGraphic.geometry = overviewExtent.centerAt(mouseMapPoint);
+            }
+
+            private function overviewGraphic_mouseUpHandler(event:MouseEvent):void
+            {
+                overviewMap.removeEventListener(MouseEvent.MOUSE_MOVE, overviewMap_mouseMoveHandler);
+                overviewGraphic.removeEventListener(MouseEvent.MOUSE_UP, overviewGraphic_mouseUpHandler);
+                overviewGraphic.addEventListener(MouseEvent.MOUSE_DOWN, overviewGraphic_mouseDownHandler);
+
+                if (hasOverviewGraphicBeenMoved)
+                {
+                    hasOverviewGraphicBeenMoved = false;
+                    updateMapExtentFromOverview();
+                }
+            }
+
+            private function viewContainer_basemapSwitchHandler(event:Event):void
+            {
+//                baseMapSwitched = true;
+//                currentBaseMapId = event.data as String;
+//                if (currentState == "expanded")
+//                {
+//                    showCurrentBaseMap(currentBaseMapId);
+//                }
+            }
+
+            private function showCurrentBaseMap(currentBaseMapId:String):void
+            {
+//                var configBasemaps:Array = configData.basemaps;
+
+                if (currentBaseMapId)
+                {
+                    var selectedLabel:String;
+//                    for (var i:uint = 0; i < configBasemaps.length; i++)
+//                    {
+//                        if (configBasemaps[i].id == currentBaseMapId)
+//                        {
+//                            selectedLabel = configBasemaps[i].label;
+//                            break;
+//                        }
+//                    }
+                    if (selectedLabel)
+                    {
+                        // turn on the selected basemap layers (more than one layer can have the same label)
+                        var layers:ArrayCollection = overviewMap.layers as ArrayCollection;
+//                        for (i = 0; i < configBasemaps.length; i++)
+//                        {
+//                            var basemapLabel:String = configBasemaps[i].label;
+//                            for each (var layer:Layer in layers)
+//                            {
+//                                if (layer.id == basemapLabel)
+//                                {
+//                                    if (layer.id == selectedLabel)
+//                                    {
+//                                        layer.visible = true;
+//                                    }
+//                                    else
+//                                    {
+//                                        layer.visible = false;
+//                                    }
+//                                }
+//                            }
+//                        }
+                    }
+                }
+            }
+
+            private function sequence_effectStartHandler(event:EffectEvent):void
+            {
+                if (currentState == "expanded")
+                {
+                    if (useBaseMapLayer)
+                    {
+                        if (baseMapSwitched)
+                        {
+                            showCurrentBaseMap(currentBaseMapId);
+                        }
+                        else
+                        {
+                            // on start up and if basemap is not switched
+//                            for (var i:int = 0; i < configData.basemaps.length; i++)
+//                            {
+//                                var basemapLabel:String = configData.basemaps[i].label;
+//                                var isVisible:Boolean = configData.basemaps[i].visible;
+//                                for each (var layer:Layer in overviewMap.layers)
+//                                {
+//                                    if (layer.id == basemapLabel)
+//                                    {
+//                                        layer.visible = isVisible;
+//                                    }
+//                                }
+//                            }
+                        }
+                    }
+                    else
+                    {
+                        for each (var layer1:Layer in overviewMap.layers)
+                        {
+                            layer1.visible = true;
+                        }
+                    }
+                }
+            }
+
+            private function sequence_effectEndHandler(event:EffectEvent):void
+            {
+                if (currentState == "collapsed") // turn layer(s) off if component is collapsed
+                {
+                    for each (var layer:Layer in overviewMap.layers)
+                    {
+                        if (!(layer is GraphicsLayer && layer.name == "overviewMapGraphicsLayer"))
+                        {
+                            layer.visible = false;
+                        }
+                    }
+                }
+            }
+        ]]>
+    </fx:Script>
+
+    <s:states>
+        <s:State name="collapsed"/>
+        <s:State name="expanded"/>
+    </s:states>
+
+    <s:transitions>
+        <s:Transition fromState="*" toState="*">
+            <s:Sequence effectEnd="sequence_effectEndHandler(event)" effectStart="sequence_effectStartHandler(event)">
+                <s:Resize duration="800" target="{viewBox}"/>
+                <s:Rotate angleBy="180"
+                          autoCenterTransform="true"
+                          duration="300"
+                          target="{toggleIcon}"/>
+            </s:Sequence>
+        </s:Transition>
+    </s:transitions>
+
+    <s:BorderContainer id="viewBox"
+                       width="180" width.collapsed="{toggleIcon.width}" height="180" height.collapsed="{toggleIcon.height}"
+                        width.expanded="180" height.expanded="180">
+		<!--<extentMap:OverviewMap id="overviewMap" mainMap="{map}" extent="{full}">
+			<utils:WMTSLayer baseUrl="http://218.15.41.59:8719/wmts/sg_gz_map/Default/epsg:4610/">
+				
+			</utils:WMTSLayer>
+		</extentMap:OverviewMap>-->
+        <mx:Image id="toggleIcon"
+                  width="23" height="23"
+                  left="0" top="0"
+                  buttonMode="true"
+                  smoothBitmapContent="true"
+                  source="assets/images/i_expand2.png"
+                  toolTip.collapsed="{openToolTip}"
+                  toolTip.expanded="{closeToolTip}"
+                  useHandCursor="true"/>
+    </s:BorderContainer>
+    <s:Rect left="-1" right="-1" top="-1" bottom="-1">
+        <s:stroke>
+            <s:SolidColorStroke color="{getStyle('contentBackgroundColor')}" weight="1"/>
+        </s:stroke>
+    </s:Rect>
+    <s:Rect left="-5" right="-5" top="-5" bottom="-5">
+        <s:stroke>
+            <s:SolidColorStroke color="{getStyle('color')}" weight="2"/>
+        </s:stroke>
+    </s:Rect>
+</s:SkinnableContainer>

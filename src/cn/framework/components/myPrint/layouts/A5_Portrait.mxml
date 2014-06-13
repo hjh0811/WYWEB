@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   width="324" height="422" backgroundColor="#FFFFFF">
+	
+	<mx:Script>
+		<![CDATA[
+			import cn.framework.components.myPrint.utils.PrintMapUtil;
+			
+			import com.esri.ags.Map;
+			[Bindable] private var now:Date = new Date();
+			
+			private var _map:Map;
+			
+			public function set map(val:Map):void
+			{
+				// use printMapUtil to get the trimmed bitmap
+				_map = val;
+				
+				_map.scaleBarVisible = false;
+				
+				mapImage.source = PrintMapUtil.trimmedMap(_map,
+					mapImage.width,
+					mapImage.height);
+				_map.scaleBarVisible = true;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:DateFormatter id="dtFormatter" formatString="MMM DD, YYYY"/>
+	<mx:Canvas id="pageBorder" 
+			   x="10" y="10"
+			   width="305" height="397"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			   borderStyle="solid" borderColor="#000000" 
+			   backgroundColor="#FFFFFF"/>	
+	<mx:Image id="mapImage" 
+			  x="11" y="11"
+			  width="303" height="395" 
+			  />
+	<!--<mx:Canvas id="titleBorder" 
+			   x="10" y="338"
+			   width="305" height="72"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			   borderStyle="solid" borderColor="#000000" 
+			   backgroundColor="#FFFFFF">
+		<mx:TextInput id="inputTxt"
+					  x="43.05" y="12.7" 
+					  width="206" height="24" textAlign="center" fontSize="14" color="#000000"  editable="true" fontWeight="bold" fontFamily="Times New Roman" fontStyle="normal" text="Map Title"/>
+		<mx:Image id="logoImg" 
+				  x="278.4" y="9.6"
+				  width="23" height="27"
+				  source="assets/images/NoArrow.PNG" alpha="1.0"/>
+		<mx:Text id="disclaimerTxt"
+				 x="28.65" y="35.65"
+				 text="This map is to be used for reference purposes only, and no other use or reliance on the same is authorized. Parcel lines are shown for tax purposes only and are not intended for conveyances, nor is it intended to substitute for a legal survey or property abstract.  Parcels shown do not necessarily constitute a legal lot of record."
+				 fontSize="4" fontWeight="normal"
+				 width="241" height="24" color="#040000" textAlign="center"/>
+		<mx:Text id="dateTxt" 
+				 x="100" y="57.65" 
+				 text="{'Printed: ' + dtFormatter.format(now.toLocaleDateString())}" 
+				 textAlign="center" 
+				 height="12" fontSize="6" width="100" fontFamily="Arial" color="#090000"/>
+	</mx:Canvas>
+	<mx:Image  id="northImg" 
+			   x="12" y="354"
+			   width="29" height="40"
+			   source="assets/images/printlogo.PNG" autoLoad="true"/>
+	<mx:Text id="SubTitleTxt" 
+			 x="49" y="339" 
+			 text="City of Rome / Floyd County" 
+			 fontSize="8" fontWeight="normal" 
+			 width="211" height="16" 
+			 textAlign="center"  fontFamily="Arial" fontStyle="italic" color="#000106"/>-->
+	
+</mx:Canvas>

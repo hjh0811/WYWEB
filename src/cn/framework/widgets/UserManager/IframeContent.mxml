@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" backgroundAlpha="0" verticalGap="0">
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.FrameContainer;
+			import cn.framework.utils.HtmlUtil;
+			
+			import com.google.code.flexiframe.IFrame;
+
+			
+			private var iframe:IFrame;
+			private var url:String;
+			public function init(url:String):void
+			{
+				this.url = url;
+				if(iframe==null)
+				{
+					iframe = new IFrame;
+					iframe.id = "richHtmlIframe";
+					iframe.percentWidth = 100;
+					iframe.percentHeight = 100;
+					this.addChild(iframe);
+				}
+				iframe.source = url;
+				HtmlUtil.iframeShow(iframe.id);
+			}
+			
+			private function iframeMouseOverHandler(event:MouseEvent):void
+			{
+				HtmlUtil.iframeShow(iframe.id);
+			}
+			
+			private function saveHtml():void
+			{
+				iframe.callIFrameFunction("save",[FrameContainer.getInstance().serviceManager.serviceURL]);
+			}
+		]]>
+	</fx:Script>
+	<s:BorderContainer width="100%" borderAlpha="0" height="35">
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:backgroundFill>
+			<s:SolidColor alpha="1" color="0xffffff">
+				
+			</s:SolidColor>
+		</s:backgroundFill>
+		<mx:Button id="back" label="返回" icon="@Embed('assets/images/layer.png')"/>
+		<mx:Button id="save" label="保存" icon="@Embed('assets/images/layer.png')" click="saveHtml()"/>
+	</s:BorderContainer>
+</mx:VBox>

@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  height="39" width="306" xmlns:esri="http://www.esri.com/2008/ags">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<esri:GeometryService id="geometryService"
+							  concurrency="last"
+							  lengthsComplete="lengthsCompleteHandler(event)"
+							  areasAndLengthsComplete="geometryService_areasAndLengthsCompleteHandler(event)"
+							  showBusyCursor="true" 
+							  url="{geometryServices}"/>
+		<esri:NavigationTool id="nav" map="{this.map}"/>
+		<esri:DrawTool id="drawbar"
+					   map="{this.map}" drawEnd="drawEndHandler(event)" />
+		
+		<esri:InfoSymbol id="myInfoSymbol">
+			<esri:infoRenderer>
+				<fx:Component>
+					<s:DataRenderer>
+						<s:Label paddingBottom="3"
+								 paddingLeft="3"
+								 paddingRight="3"
+								 paddingTop="3"
+								 text="距离为 {data.distance}" fontSize="13" fontWeight="bold" color="0x0000ff"/>
+					</s:DataRenderer>
+				</fx:Component>
+			</esri:infoRenderer>
+		</esri:InfoSymbol>
+		<esri:InfoSymbol id="myInfoSymbol2">
+			<esri:infoRenderer>
+				<fx:Component>
+					<s:DataRenderer>
+						<s:Label paddingBottom="3"
+								 paddingLeft="3"
+								 paddingRight="3"
+								 paddingTop="3"
+								 text="面积为 {data.area}" fontSize="13" fontWeight="bold" color="0x0000ff"/>
+					</s:DataRenderer>
+				</fx:Component>
+			</esri:infoRenderer>
+		</esri:InfoSymbol>
+		
+		<esri:SimpleLineSymbol id="lineSymbol"
+							   width="4"
+							   color="#6E6F00"/>
+		<mx:NumberFormatter id="myNumberFormatter"
+							precision="2"
+							useThousandsSeparator="true"/>
+		<esri:SimpleFillSymbol id="mySFS" color="0xAA0000" alpha="0.5">
+			<esri:SimpleLineSymbol width="2" color="0xAA0000"/>
+		</esri:SimpleFillSymbol>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.FrameContainer;
+			import cn.framework.windows.ExportWindow;
+			
+			import com.esri.ags.FeatureSet;
+			import com.esri.ags.Graphic;
+			import com.esri.ags.Map;
+			import com.esri.ags.Units;
+			import com.esri.ags.events.DrawEvent;
+			import com.esri.ags.events.GeometryServiceEvent;
+			import com.esri.ags.geometry.Geometry;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.Polygon;
+			import com.esri.ags.geometry.Polyline;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.layers.Layer;
+			import com.esri.ags.tools.DrawTool;
+			import com.esri.ags.tools.NavigationTool;
+			import com.esri.ags.utils.GeometryUtil;
+			import com.esri.ags.utils.JSONUtil;
+			
+			import mx.controls.Alert;
+			import mx.effects.Move;
+			import mx.managers.CursorManager;
+			import mx.managers.PopUpManager;
+			
+			import spark.effects.Move3D;
+			import spark.effects.Rotate3D;
+			
+			private var exportWindow:ExportWindow;
+			[Bindable]
+			private var geometryServices:String = "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer";
+			
+			
+			[Embed(source="assets/cursors/MoveZoomIn.png")]
+			private var zoomInCursor:Class;
+			[Embed(source="assets/cursors/MoveZoomOut.png")]
+			private var zoomOutCursor:Class;
+			[Embed(source="assets/cursors/lengthCursor.png")]
+			private var lengthCursor:Class;
+			[Embed(source="assets/cursors/areaCursor.png")]
+			private var areaCursor:Class;
+			
+			[Bindable]
+			private var _map:Map;
+			
+			[Bindable]
+			public function set map(value:Map):void
+			{
+				this._map = value;
+			}
+			
+			public function get map():Map
+			{
+				return this._map;
+			}
+			
+			private function itemClick(event:Event,index:int):void
+			{
+				bt1.selected =false;
+				bt2.selected =false;
+				bt3.selected =false;
+				bt4.selected =false;
+				bt5.selected =false;
+				bt6.selected =false;
+				bt7.selected =false;
+//				bt8.selected =false;
+				bt9.selected =false;
+				var button:ToggleButton = event.currentTarget as ToggleButton;
+				button.selected =true;
+				map.cursorManager.removeAllCursors();
+				nav.deactivate();
+				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+				drawbar.deactivate();
+				var move:Move=new Move;
+				switch (index)
+				{
+					case 0:
+					{
+						nav.activate(NavigationTool.PAN);
+						move.xTo=this.screen.width - 270;
+						move.yTo=30;
+						
+						break;
+					}
+					case 1:
+					{
+						nav.activate(NavigationTool.PAN);
+						move.xTo=20;
+						move.yTo=this.screen.height - 300;
+						
+						break;
+					}
+					case 2:
+					{
+						nav.activate(NavigationTool.PAN);
+						break;
+					}
+					case 6:
+					{
+						nav.activate(NavigationTool.ZOOM_IN);
+						
+						map.cursorManager.setCursor(zoomInCursor,index,-13,-13);
+						break;
+					}
+					case 7:
+					{
+						nav.activate(NavigationTool.ZOOM_OUT);
+					    map.cursorManager.setCursor(zoomOutCursor,index,-16,-16);
+						break;
+					}
+					case 8:
+					{
+						nav.activate(NavigationTool.PAN);
+						
+						break;
+					}
+					case 9:
+					{
+						clear();
+						break;
+					}
+					case 10:
+					{
+						redLingGraphicsLayer.clear();
+						drawbar.activate(DrawTool.POLYLINE);
+						map.cursorManager.setCursor(lengthCursor,index,-6,-17);
+						break;
+					}
+					case 11:
+					{
+						redLingGraphicsLayer.clear();
+						drawbar.activate(DrawTool.POLYGON);
+						map.cursorManager.setCursor(areaCursor,index,-6,-17);
+						break;
+					}
+					case 12:
+					{
+//						leftContent.visible = false;
+//						leftContent.includeInLayout = false;
+//						img.source = "assets/main/plush.png";
+//						isExpand = false;
+//						viewStack.selectedIndex = 1;
+						break;
+					}
+					case 13:
+					{
+						FrameContainer.getInstance().logoVisible();
+						break;
+					}
+					case 14:
+					{
+						exportWindow=ExportWindow(PopUpManager.createPopUp(this.parentApplication.parent, ExportWindow, true));
+						exportWindow.map=this.map;
+						PopUpManager.centerPopUp(exportWindow);
+						
+						var rotate:Rotate3D = new Rotate3D;;
+//						rotate.angleZFrom = 90;
+//						rotate.angleZTo= 0;
+//						rotate.angleYFrom = 60;
+//						rotate.angleYTo = 0;
+						rotate.angleXFrom = -90;
+						rotate.angleXTo = 0;
+						rotate.duration = 1000;
+						rotate.play([exportWindow]);
+//						var move3d:Move3D = new Move3D;
+//						move3d.xFrom = 0;
+//						move3d.xTo = 500;
+//						move3d.zFrom = 360;
+//						move3d.zTo = 0;
+//						move3d.play([exportWindow]);
+						break;
+					}
+					case 15:
+					{
+//						this.map.addEventListener(MapMouseEvent.MAP_CLICK, identifyClickHandler);
+						break;
+					}
+					default:
+					{
+						nav.deactivate();
+						break;
+					}
+						
+				}				
+			}
+			
+			private function clear():void
+			{
+				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+				redLingGraphicsLayer.clear();
+				
+				var drawlayer:GraphicsLayer = this.map.getLayer("drawlayer") as GraphicsLayer;
+				if(drawlayer!=null) drawlayer.clear();
+				
+				for each(var layer:Layer in this.map.layers)
+				{
+					if(layer is GraphicsLayer)
+					{
+						var glayer:GraphicsLayer = layer as GraphicsLayer;
+						glayer.clear();
+					}
+				}
+				this.map.infoWindow.hide();
+//				recAC = null;
+//				this.pageBar.visible = false;
+			}
+			
+			private var latestEndpoint:MapPoint;
+			private function drawEndHandler(event:DrawEvent):void
+			{
+				
+				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+				redLingGraphicsLayer.clear();
+				
+				var calculatedAttributes:Object;
+				
+				if(event.graphic.geometry is Polyline)
+				{
+					var drawnLine:Polyline = Polyline(event.graphic.geometry);
+					drawnLine.spatialReference = this.map.spatialReference;
+					var g:Graphic = new Graphic;
+					g.geometry = drawnLine;
+					g.symbol = this.lineSymbol;
+					redLingGraphicsLayer.add(g);
+					
+					var lengthArr:Array = GeometryUtil.geodesicLengths([drawnLine],Units.METERS);
+					var pt:MapPoint;
+					
+					if (drawnLine.paths[0].length > 2)
+					{
+						var mid:int = drawnLine.paths[0].length / 2;
+						pt = drawnLine.paths[0][mid];
+					}
+					else
+					{
+						pt = drawnLine.paths[0][0];
+						
+					}
+					if(lengthArr[0]<3000){
+						calculatedAttributes = { distance: Math.round(lengthArr[0]) + " " + "米", featureType: "line" };
+					}
+					else
+					{
+						calculatedAttributes = { distance: myNumberFormatter.format(lengthArr[0]) + " " + "千米", featureType: "line" };
+					}
+					
+					var measurementGraphic:Graphic = new Graphic(pt, myInfoSymbol, calculatedAttributes);
+					redLingGraphicsLayer.add(measurementGraphic);
+					
+					Alert.show(JSONUtil.encode(event.graphic.geometry));
+					
+					
+				}
+				else if(event.graphic.geometry is Polygon)
+				{
+					var polygon:Polygon = Polygon(event.graphic.geometry);
+					polygon.spatialReference = this.map.spatialReference;
+					var g0:Graphic = new Graphic;
+					g0.geometry = polygon;
+					g0.symbol = this.mySFS;
+					redLingGraphicsLayer.add(g0);
+					
+					latestEndpoint = polygon.extent.center;
+					
+					if(GeometryUtil.polygonSelfIntersecting(polygon))
+					{
+						Alert.show("图形自相交，请重新绘制");
+						return;
+					}
+					var areasArr:Array = GeometryUtil.geodesicAreas([polygon],Units.SQUARE_METERS);
+					
+					var dist:Number = areasArr[0];;
+					var myAttributes:Object = {};
+					if(dist < 1000000)
+					{
+						myAttributes.area = Math.round(dist) + " 平方米";
+					}
+					else
+					{
+						myAttributes.area = myNumberFormatter.format(dist/1000000) + " 平方千米";
+					}
+					var textGra:Graphic = new Graphic(latestEndpoint, myInfoSymbol2, myAttributes);
+					redLingGraphicsLayer.add(textGra);
+					
+				}
+			}
+			
+			private function lengthsCompleteHandler(event:GeometryServiceEvent):void
+			{
+				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+				var dist:Number = (event.result as Array)[0];
+				var myAttributes:Object = {};
+				if (dist < 3000)
+				{
+					myAttributes.distance = Math.round(dist) + " 米";
+				}
+				else
+				{
+					myAttributes.distance = Number(dist / 1000).toFixed(1) + " 千米";
+				}
+				var g:Graphic = new Graphic(latestEndpoint, myInfoSymbol, myAttributes);
+				redLingGraphicsLayer.add(g);
+			}
+			
+			
+			protected function geometryService_areasAndLengthsCompleteHandler(event:GeometryServiceEvent):void
+			{
+				// TODO Auto-generated method stub
+				var dist:Number = (event.result.areas as Array)[0];;
+				var myAttributes:Object = {};
+				if(dist < 1000000)
+				{
+					myAttributes.area = Math.round(dist) + " 平方米";
+				}
+				else
+				{
+					myAttributes.area = myNumberFormatter.format(dist/1000000) + " 平方千米";
+				}
+				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+				var g:Graphic = new Graphic(latestEndpoint, myInfoSymbol2, myAttributes);
+				redLingGraphicsLayer.add(g);
+			}
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" height="100%" gap="0">
+		<s:Image source="assets/main/toolbar_bg_left.png"/>
+		<mx:Canvas backgroundSize="100%" width="100%" height="100%" backgroundImage="assets/main/toolbar_bg_center.png">
+		</mx:Canvas>
+		<s:Image source="assets/main/toolbar_bg_right.png"/>
+	</s:HGroup>
+	<s:HGroup gap="3" width="100%" horizontalAlign="center">
+		<s:ToggleButton toolTip="平移" id="bt1" click="itemClick(event,8)" width="34" height="39" styleName="py" />
+		<s:ToggleButton toolTip="放大" id="bt2" click="itemClick(event,6)" width="34" height="39" styleName="fd" />
+		<s:ToggleButton toolTip="缩小" id="bt3" click="itemClick(event,7)" width="34" height="39" styleName="sx" />
+		<s:ToggleButton toolTip="距离测量" id="bt4" click="itemClick(event,10)" width="34" height="39" styleName="jl" />
+		<s:ToggleButton toolTip="面积测量" id="bt5" click="itemClick(event,11)" width="34" height="39" styleName="mj" />
+		<s:ToggleButton toolTip="地图清理" id="bt6" click="itemClick(event,9)" width="34" height="39" styleName="qc" />
+		<s:ToggleButton toolTip="打印" id="bt7" click="itemClick(event,14)" width="34" height="39" styleName="dy" />
+		<!--<s:ToggleButton toolTip="地图对比" id="bt8" click="itemClick(event,12)" width="34" height="39" styleName="fp" />-->
+		<s:ToggleButton toolTip="全屏" id="bt9" click="itemClick(event,13)" width="34" height="39" styleName="qp" />
+	</s:HGroup>
+</s:Group>

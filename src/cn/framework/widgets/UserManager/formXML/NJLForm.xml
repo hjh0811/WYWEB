@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<configuration  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx" width="920" height="560">
+	<form width="430" useMap="true">
+			<s:Label x="39" y="31" text="名称"/>
+			<s:TextInput x="68" y="26" width="329" text="name" height="22"/>
+			<s:Label x="39" y="94" text="电话"/>
+			<s:TextInput x="68" y="89" width="329" text="dh" height="22"/>
+			<s:Label x="39" y="62" text="地址"/>
+			<s:TextInput x="68" y="57" width="329" text="dz" height="22"/>
+			<s:TextArea x="68" y="121" height="164" width="329" text="js"/>
+			<s:Label x="39" y="124" text="介绍"/>
+			<s:TextArea x="68" y="361" height="63" width="329" text="bz"/>
+			<s:Label x="39" y="367" text="备注"/>
+			<s:Label x="31" y="333" text="X坐标"/>
+			<s:TextInput x="68" y="328" width="138" enabled="false" text="x"/>
+			<s:Label x="225" y="333" text="Y坐标"/>
+			<s:TextInput x="260" y="328" width="138" enabled="false" text="y"/>
+			<s:Label x="15" y="300" text="建筑面积"/>
+			<s:TextInput x="68" y="295" width="138" text="mj"/>
+			<s:Label x="221" y="300" text="餐位数"/>
+			<s:TextInput x="260" y="295" width="138" text="cws"/>
+	</form>
+</configuration>

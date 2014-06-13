@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox   xmlns:mx		="http://www.adobe.com/2006/mxml" 
+			xmlns:flash		="flash.filters.*" 
+			width			="100%" 
+			minHeight		="35" 
+			height			="40"
+			styleName		="RecordCanvas" 
+			backgroundAlpha	="0.3" 
+			useHandCursor	="true" 
+			buttonMode		="true" 
+			paddingLeft		="3" 
+			paddingRight	="3" 
+			borderColor="#30A5F7" cornerRadius="6" borderStyle="solid" backgroundColor="#8BC9F8"
+			mouseOver		="mouseOverRow()" 
+			mouseOut		="mouseOutRow()"  verticalScrollPolicy="off"
+			verticalAlign	="middle">
+			
+	<mx:Script>
+		<![CDATA[
+			import mx.effects.Move;
+			import mx.managers.PopUpManager;
+
+			
+		//	import com.esri.solutions.flexviewer.TitleWindow.GPSFunctionWindow;
+		    [Bindable]
+			public var recid:int;
+			
+			[Bindable]
+			private var recicon:String = "assets/images/i_pin3.png";
+			
+			[Bindable]
+			private var title:String;	
+			
+			[Bindable]
+			private var content:String;
+			
+			[Bindable]
+			private var carname:String;
+			
+			[Bindable] 
+            public var checkFlag : Boolean = false; 
+			
+			private var _infoData:Object;
+			
+			
+			public function get infoData():Object
+			{
+				return _infoData;
+			}
+			
+			public function set infoData(value:Object):void
+			{
+				_infoData = value;
+				
+				recicon = infoData.icon;
+				title = infoData.title;
+				content = infoData.content;
+				
+				if (infoData.link)
+				{
+					var link:String = infoData.link;
+					var pos:Number = link.length - 4;
+					var sfx:String = link.substr(pos, 4).toLowerCase();
+					if ((sfx == ".jpg") || (sfx == ".png") || (sfx ==".gif"))
+					{
+						//recLink.visible = false;
+						//recLink.includeInLayout = false;
+					}
+					else
+					{
+						//recLink.visible = true;
+						//recLink.includeInLayout = true;
+					}
+				}
+			}
+						
+			private function mouseOverRow():void
+			{
+				this.setStyle("backgroundAlpha", 0.9);
+			}
+						
+			private function mouseOutRow():void
+			{
+				this.setStyle("backgroundAlpha", 0.3);
+			}
+            private function clickSelect(event:MouseEvent):void
+            {
+            	//var bb : Boolean ;
+            	//bb = checkSelect.selected
+            	//carmark.checked = bb;
+            }
+		
+
+			protected function CarInfo_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+//				var project:ProjectFormWindow = PopUpManager.createPopUp(this.parentApplication.parent,ProjectFormWindow,true) as ProjectFormWindow;
+//				PopUpManager.centerPopUp(project);
+//				project.infoData = this._infoData;
+			}
+
+		]]>
+	</mx:Script>
+				
+	<!--<mx:Image id="recIcon" source="{recicon}" width="20" height="20">
+		<mx:filters>
+			<flash:GlowFilter color="#000000" alpha="0.5" blurX="10" blurY="10"/>
+		</mx:filters>
+	</mx:Image>-->
+	
+	<mx:VBox verticalGap="0" width="100%" verticalScrollPolicy="off">
+		<mx:VBox verticalGap="0" width="100%" mouseChildren="false" useHandCursor="true" verticalAlign="middle" toolTip="{content}" buttonMode="true" verticalScrollPolicy="off">
+			<mx:Label selectable="false" styleName="RecordText" fontWeight="bold" text="{title}" width="98%"/>
+			<!--<mx:Label selectable="false"   fontSize="12" text="{content}"  width="98%"/>-->
+		</mx:VBox>
+	</mx:VBox>
+	<mx:Image id="CarInfo" source="assets/images/w_link.png" useHandCursor="true" buttonMode="true" click="CarInfo_clickHandler(event)"/>
+</mx:HBox>

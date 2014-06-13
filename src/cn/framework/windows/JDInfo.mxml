@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" paddingLeft="8" paddingRight="8">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.Graphic;
+			import com.esri.ags.Map;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.symbols.PictureMarkerSymbol;
+			import com.esri.ags.tools.DrawTool;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			public var serviceURL:String;
+			
+			public var map:Map;
+			
+			[Bindable]
+			private var _infoData:Object;
+			
+			public function set infoData(value:Object):void
+			{
+				this._infoData = value;	
+				if(_infoData.id)
+				{
+					var httpservice:HTTPService = new HTTPService;
+					httpservice.url = serviceURL;
+					httpservice.addEventListener(ResultEvent.RESULT,resultHandler);
+					httpservice.resultFormat = "e4x";
+					var param:Object = new Object;
+					param.t = "LC002";
+					param.id = _infoData.id;
+					httpservice.send(param);
+					
+				}
+			}
+			
+			public function get infoData():Object
+			{
+				return this._infoData;
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null) return; 	
+				
+				var jsonValues:Array =  jsonObject["values"];
+				if(jsonValues!=null && jsonValues.length > 0)
+				{
+					js.text = jsonValues[0]["js"];
+				}
+				this.img.source = "resource/jd/" +_infoData.id+ ".jpg";
+			}
+			
+			private function more():void
+			{
+				navigateToURL(new URLRequest("resource/"+_infoData.id + ".htm"),"_blank");
+			}
+			private function showpic():void
+			{
+				navigateToURL(new URLRequest("resource/picture/jd/jd"+_infoData.id + ".htm"),"_blank");
+			}
+
+			
+			protected function linkbutton1_clickHandler(tableid:String):void
+			{
+				// TODO Auto-generated method stub
+				getJDdata(tableid,eatRsultHandler);
+			}
+			
+			private function getJDdata(tableID:String,func:Function):void
+			{
+				var httpservice:HTTPService = new HTTPService;
+				httpservice.url = serviceURL;
+				httpservice.resultFormat = "e4x";
+				var param:Object = new Object;
+				param.t=tableID;
+				httpservice.addEventListener(ResultEvent.RESULT,func);
+				httpservice.send(param);
+			}
+			
+			[Bindable]
+			private var recAC:ArrayCollection;
+			private function eatRsultHandler(event:ResultEvent):void
+			{
+				list.includeInLayout = true;
+				list.visible = true;
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null) return; 	
+				
+				var jsonValues:Array =  jsonObject["values"];
+				var resultLayer:GraphicsLayer=this.map.getLayer("resultLayer") as GraphicsLayer;
+				resultLayer.clear();
+				
+				recAC = new ArrayCollection;
+				for each(var obj:Object in jsonValues)
+				{
+					var infoData:Object = {id:obj.id, title:obj.name,icon:"assets/images/p2.png",x:obj.x, y:obj.y};
+					recAC.addItem(infoData);
+					
+					if(obj.x==null ||obj.y==null) continue;
+					
+					var pt:MapPoint = new MapPoint(obj.x,obj.y);
+					
+					var graphic:Graphic = new Graphic;
+					graphic.geometry = pt;
+					graphic.attributes = infoData;
+					graphic.symbol = new PictureMarkerSymbol("assets/images/p2.png",25,25);
+					resultLayer.add(graphic);
+				}
+			}
+			
+			protected function infoClickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+
+			}
+
+
+			protected function list_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(list.selectedItem==null) return;
+				var infoData:Object=list.selectedItem;
+				if(infoData.x!=null&&infoData.x!="")
+				{
+					var pt:MapPoint = new MapPoint(infoData.x,infoData.y);
+					this.map.center = pt;
+					this.map.level = 5;
+					
+					var resultLayer:GraphicsLayer=this.map.getLayer("resultLayer") as GraphicsLayer;
+					if(resultLayer!=null)
+					{
+						var graphic:Graphic = new Graphic;
+						graphic.geometry = pt;
+						graphic.attributes = infoData;
+						resultLayer.add(graphic);
+						fader.play([graphic]);
+					}
+				}
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Animate id="fader" 
+				   duration="500" 
+				   repeatBehavior="loop" 
+				   repeatCount="5" 
+				   > 
+			<s:SimpleMotionPath property="alpha" 
+								valueFrom="1.0" valueTo="0.0" /> 
+		</s:Animate> 
+	</fx:Declarations>
+	<s:HGroup width="100%">
+		<s:HGroup width="260">
+			<s:Label text="简介:"/>
+			<mx:Text id="js" width="220"/>
+		</s:HGroup>
+		<s:Image id="img" source="resource/1.jpg" width="100" height="100" click="showpic()" toolTip="点击详细内容" useHandCursor="true" buttonMode="true"/>
+	</s:HGroup>
+	<mx:Text text="详细信息" textDecoration="underline" click="more()" useHandCursor="true" buttonMode="true"/>
+	
+	<mx:HRule width="100%" height="1"/>
+	<mx:Text text="在附件找" paddingTop="3"/>
+	<s:HGroup verticalAlign="middle" height="30">
+		<mx:ComboBox width="70" selectedIndex="0">
+			<mx:dataProvider>
+				<fx:Array>
+					<fx:String>20</fx:String>
+					<fx:String>10</fx:String>
+					<fx:String>5</fx:String>
+					<fx:String>2</fx:String>
+					<fx:String>1</fx:String>
+				</fx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+		<s:Label text="公里内:"/>
+		
+		<mx:LinkButton label="酒店" click="linkbutton1_clickHandler('LC005')"/>
+		<mx:LinkButton label="特产" click="linkbutton1_clickHandler('LC003')"/>
+	</s:HGroup>
+	<s:List id="list" click="list_clickHandler(event)"  labelField="title" dataProvider="{this.recAC}" visible="false" includeInLayout="false" maxHeight="90" width="100%">
+		
+	</s:List>
+</s:VGroup>

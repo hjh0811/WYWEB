@@ -1,0 +1,15 @@
+<?xml version="1.0" ?> 
+<configuration  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx" width="460" height="300">
+	<form width="420"  useMap="false">
+			<s:Label x="32" y="31" text="姓名"/>
+			<s:TextInput x="68" y="26" width="329" text="real_name"/>
+			<s:Label x="32" y="96" text="密码"/>
+			<s:TextInput x="68" y="91" width="329" text="pw" displayAsPassword="true"/>
+			<s:Label x="20" y="62" text="用户名"/>
+			<s:TextInput x="68" y="57" width="329" text="login_name"/>
+			<s:Label x="32" y="130" text="电话"/>
+			<s:TextInput x="68" y="125" width="329" text="mobile"/>
+			<s:Label x="32" y="161" text="邮箱"/>
+			<s:TextInput x="68" y="156" width="329" text="email"/>
+	</form>
+</configuration>

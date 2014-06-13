@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<configuration  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx" width="920" height="560">
+	<form width="430" useMap="true">
+		<s:Label x="32" y="31" text="名称"/>
+		<s:TextInput x="68" y="26" width="338" text="name"/>
+		<s:Label x="37" y="236" text="地址"/>
+		<s:TextInput x="68" y="231" width="338" text="dz"/>
+		<s:Label x="28" y="431" text="X坐标"/>
+		<s:TextInput x="68" y="426" width="140" text="x" enabled="false"/>
+		<s:Label x="226" y="431" text="Y坐标"/>
+		<s:TextInput x="266" y="426" width="140" text="y" enabled="false"/>
+		<s:TextArea x="68" y="58" height="164" width="338" text="js"/>
+		<s:Label x="33" y="61" text="介绍"/>
+		<s:TextArea x="68" y="262" width="338" height="156" text="tj"/>
+		<s:Label x="25" y="265" width="45" height="54" text="旅游区域与进出条件"/>
+	</form>
+</configuration>

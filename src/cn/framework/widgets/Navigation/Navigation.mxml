@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     ////////////////////////////////////////////////////////////////////////////////
+     //
+     // Copyright (c) 2010 ESRI
+     //
+     // All rights reserved under the copyright laws of the United States.
+     // You may freely redistribute and use this software, with or
+     // without modification, provided you include the original copyright
+     // and use restrictions.  See use restrictions in the file:
+     // <install location>/License.txt
+     //
+     ////////////////////////////////////////////////////////////////////////////////
+-->
+<s:Group xmlns:s="library://ns.adobe.com/flex/spark"
+         xmlns:fx="http://ns.adobe.com/mxml/2009"
+         xmlns:esri="http://www.esri.com/2008/ags"
+         creationComplete="group1_creationCompleteHandler(event)" xmlns:Navigation="cn.framework.widgets.Navigation.*">
+
+    <fx:Script>
+        <![CDATA[
+			import com.esri.ags.Map;
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.rpc.AsyncResponder;
+			
+			import spark.effects.Move;
+			import spark.events.IndexChangeEvent;
+
+			
+            [Bindable]
+            public var map:Map;
+
+            [Bindable]
+            public var panwheelItem:NavToolItem;
+
+            [Bindable]
+            public var zoomFullextItem:NavToolItem;
+
+            [Bindable]
+            public var panupItem:NavToolItem;
+
+            [Bindable]
+            public var pandownItem:NavToolItem;
+
+            [Bindable]
+            public var panleftItem:NavToolItem;
+
+            [Bindable]
+            public var panrightItem:NavToolItem;
+
+
+            [Bindable]
+            public var prevextItem:NavToolItem;
+
+            [Bindable]
+            public var nextextItem:NavToolItem;
+
+            [Bindable]
+            public var zoominItem:NavToolItem;
+
+            [Bindable]
+            public var zoomoutItem:NavToolItem;
+
+            [Bindable]
+            public var panItem:NavToolItem;
+			
+			[Bindable]
+			public var identifyItem:NavToolItem;
+			[Bindable]
+			public var clearItem:NavToolItem;
+			
+//			[Bindable]
+//			private var lastIdentifyResultGraphic:Graphic;
+//			
+//			private var clickGraphicsLayer:GraphicsLayer = new GraphicsLayer();
+//			private var graphicslayer:GraphicsLayer = new GraphicsLayer();
+
+
+            protected function buttonbar1_changeHandler(event:IndexChangeEvent):void
+            {
+//                doNavAction(event.currentTarget.dataProvider[event.newIndex].action,
+//                            event.currentTarget.dataProvider[event.newIndex].label);
+//				if(event.currentTarget.dataProvider[event.newIndex].action=="zoomin")
+//				{
+//					this.map.cursorManager.removeAllCursors();
+//					this.map.removeEventListener(MapMouseEvent.MAP_CLICK,mapClickHandler);
+//					nav.activate(NavigationTool.ZOOM_IN);
+//					
+//				}
+//				else if(event.currentTarget.dataProvider[event.newIndex].action=="zoomout")
+//				{
+//					this.map.cursorManager.removeAllCursors();
+//					this.map.removeEventListener(MapMouseEvent.MAP_CLICK,mapClickHandler);
+//					nav.activate(NavigationTool.ZOOM_OUT);
+//				}
+//				else if(event.currentTarget.dataProvider[event.newIndex].action=="pan")
+//				{
+//					this.map.cursorManager.removeAllCursors();
+//					this.clickGraphicsLayer.clear();
+//					this.map.removeEventListener(MapMouseEvent.MAP_CLICK,mapClickHandler);
+//					nav.activate(NavigationTool.PAN);
+//				}
+//				else if(event.currentTarget.dataProvider[event.newIndex].action=="Identify")
+//				{
+//					this.map.removeEventListener(MapMouseEvent.MAP_CLICK,mapClickHandler);
+//					this.map.addEventListener(MapMouseEvent.MAP_CLICK,mapClickHandler);
+//					nav.deactivate();
+//					this.map.cursorManager.setCursor(identifyCursor,0, 0, 0);
+//				}
+//				else if(event.currentTarget.dataProvider[event.newIndex].action=="clear")
+//				{
+//					for each(var layer:Layer in map.layers)
+//					{
+//						if(layer is GraphicsLayer)
+//						{
+//							var graphicslayer:GraphicsLayer = layer as GraphicsLayer;
+//							graphicslayer.clear();
+//						}
+//						
+//					}
+//					this.map.infoWindow.hide();
+//				}
+					
+            }
+			
+//			private function mapClickHandler(event:MapMouseEvent):void
+//			{
+//				
+//				clickGraphicsLayer.clear();
+//				var layer:ArcGISDynamicMapServiceLayer = this.map.getLayer("dynamicLayer") as ArcGISDynamicMapServiceLayer;
+//				
+//				identifyTask.url = layer.url;
+//				var identifyParams:IdentifyParameters = new IdentifyParameters();
+//				identifyParams.returnGeometry = true;
+//				identifyParams.tolerance = 8;
+//				identifyParams.width = this.map.width;
+//				identifyParams.height = this.map.height;
+//				identifyParams.geometry = event.mapPoint;
+//				identifyParams.mapExtent = this.map.extent;
+//				identifyParams.layerOption = "all";
+//				identifyParams.spatialReference = this.map.spatialReference;
+//				
+//				var clickGraphic:Graphic = new Graphic(event.mapPoint, clickPtSym);
+//				clickGraphicsLayer.add(clickGraphic);
+//				identifyTask.execute(identifyParams, new AsyncResponder(myResultFunction, myFaultFunction, clickGraphic));
+//			}
+//			private function myResultFunction(results:Array, clickGraphic:Graphic = null):void
+//			{
+//				if (results && results.length > 0)
+//				{
+//					for(var i:int=0;i<results.length;i++)
+//					{
+//						var result:IdentifyResult = results[i];
+//						var resultGraphic:Graphic = result.feature;
+//					
+//							map.infoWindow.hide();
+//						
+//						switch (resultGraphic.geometry.type)
+//						{
+//							case Geometry.MAPPOINT:
+//							{
+//								resultGraphic.symbol = smsIdentify;
+//								break;
+//							}
+//							case Geometry.POLYLINE:
+//							{
+//								resultGraphic.symbol = slsIdentify;
+//								break;
+//							}
+//							case Geometry.POLYGON:
+//							{
+//								resultGraphic.symbol = sfsIdentify;
+//								break;
+//							}
+//						}
+//
+//						
+//	//					lastIdentifyResultGraphic = resultGraphic;
+//						// update clickGraphic (from mouse click to returned feature)
+//						clickGraphic.symbol = new InfoSymbol(); // use default renderer
+//						clickGraphic.attributes = resultGraphic.attributes;
+//					}
+// 				}
+//			}
+//			
+//			private function myFaultFunction(error:Object, clickGraphic:Graphic = null):void
+//			{
+//				Alert.show("无查询结果");
+//			}
+
+
+            protected function buttonbar1_valueCommitHandler(event:FlexEvent):void
+            {
+                if (event.currentTarget.selectedIndex != -1)
+                {
+                    doNavAction(event.currentTarget.dataProvider[event.currentTarget.selectedIndex].action,
+                                event.currentTarget.dataProvider[event.currentTarget.selectedIndex].label);
+                }
+            }
+
+            private function doNavAction(action:String, label:String):void
+            {
+                var data:Object =
+                    {
+                        tool: action,
+                        status: label
+                    }
+                //ViewerContainer.dispatchEvent(new AppEvent(AppEvent.SET_MAP_NAVIGATION, data));
+            }
+
+            public function initButtonBar():void
+            {
+                var navAC:ArrayCollection = new ArrayCollection();
+
+//                if (panItem.toolVisible == true)
+//                {
+//                    navAC.addItem({ label: panItem.toolName, action: "pan", imageIcon: panItem.toolIcon });
+//                }
+//
+//                if (zoominItem.toolVisible == true)
+//                {
+//                    navAC.addItem({ label: zoominItem.toolName, action: "zoomin", imageIcon: zoominItem.toolIcon });
+//                }
+//
+//                if (zoomoutItem.toolVisible == true)
+//                {
+//                    navAC.addItem({ label: zoomoutItem.toolName, action: "zoomout", imageIcon: zoomoutItem.toolIcon });
+//                }
+				
+//				if (identifyItem.toolVisible == true)
+//				{
+//					navAC.addItem({ label: identifyItem.toolName, action: "Identify", imageIcon: identifyItem.toolIcon });
+//				}
+//				if (clearItem.toolVisible == true)
+//				{
+//					navAC.addItem({ label: clearItem.toolName, action: "clear", imageIcon: clearItem.toolIcon });
+//				}
+
+//                if (zoominItem.toolVisible == false && zoomoutItem.toolVisible == false && panItem.toolVisible == false)
+//                {
+//                    btnBar.visible = false;
+//                }
+
+                btnBar.dataProvider = navAC;
+            }
+			
+			private function zoomFullextent():void
+			{
+				map.extent = this.fullextent;
+			}
+
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+////				this.graphicslayer.graphicProvider = lastIdentifyResultGraphic;
+////				graphicslayer.focusEnabled = true;
+////				this.map.addLayer(graphicslayer);
+//				this.map.addLayer(clickGraphicsLayer);
+//				clickGraphicsLayer.focusEnabled = true;
+			}
+
+        ]]>
+    </fx:Script>
+	<fx:Declarations>
+		<esri:NavigationTool id="nav" map="{this.map}"/>
+		<esri:Extent id="fullextent"  xmin="113.17876766210709" xmax="113.51522396093522" ymin="25.025892465177876" ymax="25.22604963070522"/>
+		<esri:SimpleMarkerSymbol id="clickPtSym"
+								 color="0xFF0000"
+								 size="12"
+								 style="x"/>
+		
+		<!-- Symbol for Identify Result as Polyline -->
+		<esri:SimpleLineSymbol id="slsIdentify"
+							   width="2"
+							   alpha="1"
+							   color="0x00FF00"
+							   style="solid"/>
+		
+		<!-- Symbol for Identify Result as Point -->
+		<esri:SimpleMarkerSymbol id="smsIdentify"
+								 color="0x00FF00"
+								 size="15"
+								 style="diamond"/>
+		
+		<!-- Symbol for Identify Result as Polygon -->
+		<esri:SimpleFillSymbol id="sfsIdentify"/>
+		<esri:IdentifyTask id="identifyTask"
+						   concurrency="last"
+						  />
+
+	</fx:Declarations>
+    <s:layout>
+        <s:VerticalLayout gap="3" horizontalAlign="center"/>
+    </s:layout>
+    <s:filters>
+        <s:DropShadowFilter alpha="0.5"
+                            blurX="10"
+                            blurY="10"/>
+    </s:filters>
+    <s:Group includeInLayout="{panwheelItem.toolVisible}" visible="{panwheelItem.toolVisible}">
+        <s:Button id="nwButton"
+                  x="2" y="2"
+                  click="map.panUpperLeft()"
+                  skinClass="cn.framework.widgets.Navigation.nwButtonSkin"/>
+        <s:Button id="wButton"
+                  x="0" y="19"
+                  click="map.panLeft()"
+                  skinClass="cn.framework.widgets.Navigation.wButtonSkin"
+                  toolTip="{panleftItem.toolName}"/>
+        <s:Button id="swButton"
+                  x="2" y="36"
+                  click="map.panLowerLeft()"
+                  skinClass="cn.framework.widgets.Navigation.swButtonSkin"/>
+        <s:Button id="sButton"
+                  x="18" y="43"
+                  click="map.panDown()"
+                  skinClass="cn.framework.widgets.Navigation.sButtonSkin"
+                  toolTip="{pandownItem.toolName}"/>
+        <s:Button id="seButton"
+                  x="35" y="35"
+                  click="map.panLowerRight()"
+                  skinClass="cn.framework.widgets.Navigation.seButtonSkin"/>
+        <s:Button id="eButton"
+                  x="43" y="18"
+                  click="map.panRight()"
+                  skinClass="cn.framework.widgets.Navigation.eButtonSkin"
+                  toolTip="{panrightItem.toolName}"/>
+        <s:Button id="neButton"
+                  x="35" y="2"
+                  click="map.panUpperRight()"
+                  skinClass="cn.framework.widgets.Navigation.neButtonSkin"/>
+        <s:Button id="nButton"
+                  x="18" y="0"
+                  click="map.panUp()"
+                  skinClass="cn.framework.widgets.Navigation.nButtonSkin"
+                  toolTip="{panupItem.toolName}"/>
+        <Navigation:IconButton id="innerButton"
+                               x="18" y="18"
+                               click="zoomFullextent()"
+                               iconUp="{zoomFullextItem.toolIcon}"
+                               skinClass="cn.framework.widgets.Navigation.InnerButtonSkin"
+                               toolTip="{zoomFullextItem.toolName}"
+                               visible="{zoomFullextItem.toolVisible}"/>
+    </s:Group>
+    <s:HGroup gap="0">
+        <s:Button id="prevExt"
+                  x="0" y="19"
+                  click="nav.zoomToPrevExtent()"
+                  includeInLayout="{prevextItem.toolVisible}"
+                  skinClass="cn.framework.widgets.Navigation.wButtonSkin"
+                  toolTip="{prevextItem.toolName}"
+                  visible="{prevextItem.toolVisible}"/>
+        <s:Button id="nextExt"
+                  x="0" y="19"
+                  click="nav.zoomToNextExtent()"
+                  includeInLayout="{nextextItem.toolVisible}"
+                  skinClass="cn.framework.widgets.Navigation.eButtonSkin"
+                  toolTip="{nextextItem.toolName}"
+                  visible="{nextextItem.toolVisible}"/>
+    </s:HGroup>
+    <esri:Navigation top="0"
+                     map="{map}"
+                     skinClass="cn.framework.widgets.Navigation.NavigationSkin"/>
+    <s:VGroup paddingTop="3">
+        <s:ButtonBar id="btnBar"
+                     change="buttonbar1_changeHandler(event)"
+                     requireSelection="false"
+                     visible="false"
+                     skinClass="cn.framework.widgets.Navigation.VerticalButtonBarSkin"
+                     valueCommit="buttonbar1_valueCommitHandler(event)">
+            <s:layout>
+                <s:VerticalLayout gap="0"/>
+            </s:layout>
+            <!--<s:dataProvider>
+                <s:ArrayCollection>
+                    <fx:Object action="pan"
+                               imageIcon="assets/images/i_pan.png"
+                               label="Pan"/>
+                    <fx:Object action="zoomin"
+                               imageIcon="assets/images/i_zoomin.png"
+                               label="Zoom In"
+                               visible="false"/>
+                    <fx:Object action="zoomout"
+                               imageIcon="assets/images/i_zoomout.png"
+                               label="Zoom Out"/>
+					<fx:Object action="Identify"
+							   imageIcon="assets/images/i_identify.png"
+							   label="Identify"/>
+                </s:ArrayCollection>
+            </s:dataProvider>-->
+        </s:ButtonBar>
+    </s:VGroup>
+</s:Group>

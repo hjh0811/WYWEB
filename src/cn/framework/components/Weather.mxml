@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  xmlns:supportClasses="com.esri.ags.skins.supportClasses.*" creationComplete="init()" width="115">
+
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.utils.ObjectProxy;
+			
+			private var _servletcontext:String;
+			private var _jsonObject:ArrayCollection;
+			
+			public function set servletcontext(value:String):void
+			{
+				this._servletcontext = value;
+				var httpservice:HTTPService = new HTTPService;
+				httpservice.url = this._servletcontext + "servlet/weatherservlet";
+				httpservice.addEventListener(ResultEvent.RESULT, resultHandler);
+				httpservice.addEventListener(FaultEvent.FAULT,faultHandler);
+				httpservice.resultFormat = "object";
+				httpservice.send();
+			}
+			
+			private function init():void
+			{
+
+			}
+			
+			private function resultHandler(event:ResultEvent):void
+			{
+				try
+				{
+					if(event.result==null || event.result=="") return; 
+					var jsonObject:ObjectProxy = event.result.ArrayOfString; 
+					var ac:ArrayCollection = jsonObject.string as ArrayCollection;
+					if(ac==null) return; 	
+					_jsonObject = ac;
+					
+					if(ac!=null)
+					{
+						img.source =this._servletcontext + "images/weather/b_" + ac[10];
+//						md.text=ac[7].toString().split(" ")[1];
+						img_title_single.text=ac[8];
+					}
+//				img.source = "http://m.weather.com.cn/weather_img_png/" + jsonObject["weatherinfo"]["img1"] +".png"
+//				md.text=jsonObject["weatherinfo"]["temp1"];
+//				img_title_single.text=jsonObject["weatherinfo"]["img_title_single"];
+				}
+				catch(e:Error)
+				{
+					
+				}
+
+			}
+			
+			private function faultHandler(event:FaultEvent):void
+			{
+				
+			}
+			
+			
+			private var weatherPop:WeatherPop;
+			protected function group_rollOverHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+//				group.visible = true;
+				if(_jsonObject == null) return;
+				if(weatherPop==null)
+				{
+					weatherPop = PopUpManager.createPopUp(this,WeatherPop,false) as WeatherPop;
+				}
+				PopUpManager.addPopUp(weatherPop,this,false);
+				weatherPop.servletContext = this._servletcontext;
+				weatherPop.infoData = _jsonObject;
+				weatherPop.x = this.parentApplication.width - weatherPop.width-1;
+				weatherPop.y = 75;
+				weatherPop.visible = true;
+			}
+
+
+			protected function group_rollOutHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+//				group.visible = false;
+				
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup  verticalAlign="middle" width="115" height="40" horizontalAlign="right" gap="0" mouseDown="group_rollOverHandler(event)">
+		<mx:Image id="img"  width="48" height="40"/>
+		<s:VGroup gap="0" horizontalAlign="right">
+			<!--<s:Label text="乐昌" fontWeight="bold" color="0xffffff"/>-->
+			<mx:LinkButton id="md" label="乐昌天气" mouseDown="group_rollOverHandler(event)" color="0xffffff" useHandCursor="true" buttonMode="true" paddingLeft="3" paddingRight="3"/>
+			<mx:Text id="img_title_single"  color="0xffffff" useHandCursor="true" buttonMode="true"/>
+		</s:VGroup>
+	</s:HGroup>
+</s:Group>

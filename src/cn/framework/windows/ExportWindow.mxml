@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx" layout="absolute" width="400" height="120"
+				title="打印输出" close="PopUpManager.removePopUp(this)" showCloseButton="true">
+	<fx:Script>
+		<![CDATA[
+			import cn.framework.components.myPrint.PrintPreview;
+			
+			import mx.containers.Canvas;
+			
+			import cn.framework.components.myPrint.layouts.A5_Landscape;
+			import cn.framework.components.myPrint.layouts.A5_Portrait;
+			
+			import com.esri.ags.Map;
+			
+			import mx.controls.Alert;
+			import mx.controls.Image;
+			import mx.effects.Move;
+			import mx.graphics.ImageSnapshot;
+			import mx.graphics.codec.PNGEncoder;
+			import mx.managers.PopUpManager;
+			import mx.printing.FlexPrintJob;
+			import mx.printing.FlexPrintJobScaleType;
+			
+			public var map:Map
+			
+			private function export():void
+			{
+				var f:FileReference=new FileReference;
+				var pngCoder:PNGEncoder=new PNGEncoder();
+				var pngSnap:BitmapData=ImageSnapshot.captureBitmapData(map);
+				f.save(pngCoder.encode(pngSnap), 'export.png');
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function print():void
+			{
+				var mapLayout:Object;
+				var move:Move = new Move;
+				if(typeComb.selectedItem.toString() == '纵向')
+				{
+					mapLayout = new A5_Portrait();
+					move.xFrom = 50
+					move.xTo = 50;
+					move.yFrom = 0
+					move.yTo = 90;
+				}
+				else
+				{
+					mapLayout = new A5_Landscape;
+					move.xFrom = 0
+					move.xTo = 50;
+					move.yFrom = 120
+					move.yTo = 120;
+				}
+				mapLayout.initialize();
+				mapLayout.map = map;
+//				mapLayout.inputTxt.text = "";
+//				mapLayout.SubTitleTxt.text = "";
+//				mapLayout.disclaimerTxt.text = "";
+				
+
+				// Create the popup and set its map layout 
+				var popup:PrintPreview = PrintPreview(PopUpManager.createPopUp(this,PrintPreview,true));
+				move.play([popup]);
+				//PopUpManager.centerPopUp(popup);
+				popup.mapLayout = mapLayout as Canvas;
+//				var printJob:FlexPrintJob=new FlexPrintJob();
+//				if (printJob.start())
+//				{
+//					var h:Number=printJob.pageHeight;
+//					var w:Number=printJob.pageWidth;
+//					var printBox:VBox=new VBox();
+//					printBox.width=this.map.width;
+//					printBox.horizontalScrollPolicy="off";
+//					printBox.verticalScrollPolicy="off";
+//					try
+//					{
+//						var bmpMap:BitmapData=ImageSnapshot.captureBitmapData(this.map);
+//						var bmp:Bitmap=new Bitmap(bmpMap);
+//						var printImg:Image=new Image();
+//						printImg.source=bmp;
+//						printBox.addChild(printImg);
+//						printJob.addObject(printBox, FlexPrintJobScaleType.SHOW_ALL);
+//						printJob.printAsBitmap;
+//					}
+//					catch (e:Error)
+//					{
+//						Alert.show(e.toString());
+//					}
+//					printJob.send();
+//					PopUpManager.removePopUp(this);
+//				}
+			}
+				
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:ComboBox id="typeComb" width="80">
+				<fx:Array>
+					<fx:String>纵向</fx:String>
+					<fx:String>横向</fx:String>
+				</fx:Array>
+			</mx:ComboBox>
+			<mx:Button x="33" y="35" label="打印预览" click="print()" icon="@Embed('assets/buttons/printer.png')"/>
+			<mx:Button x="110" y="35" label="导出图片" click="export()" icon="@Embed(source='assets/buttons/export.png')"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>
