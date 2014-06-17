@@ -3,6 +3,28 @@
 @namespace mx "library://ns.adobe.com/flex/mx";
 @namespace esri "http://www.esri.com/2008/ags";
 
+.globe
+{
+	font-family:"SimSun";
+	font-size:12; 
+}
+s|Application
+{ 
+	font-family:"SimSun";
+	font-size:12; 
+}
+
+
+mx|ToolTip
+{
+	font-size:12;
+}
+
+.errorTip
+{
+	font-size:12;
+	
+}
 
 .zbcxButton {
 	color:#FFFFFF;
@@ -149,6 +171,17 @@
 	overIcon: Embed(source="assets/main/btn_search_h.jpg");
 	disableIcon: Embed(source="assets/main/btn_search.jpg");
 	selectedIcon: Embed(source="assets/main/btn_search.jpg");
+	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
+}
+
+.layerswicth
+{
+	color:#FFFFFF;
+	icon: Embed(source="assets/images/check_off.png");
+	downIcon: Embed(source="assets/images/check_on.png");
+	overIcon: Embed(source="assets/images/check_off.png");
+	disableIcon: Embed(source="assets/images/check_off.png");
+	selectedIcon: Embed(source="assets/images/check_on.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
 

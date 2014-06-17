@@ -83,6 +83,7 @@
     <module application="src/index.mxml" destPath="cn/framework/widgets/DrawWidget.swf" optimize="true" sourcePath="src/cn/framework/widgets/DrawWidget.mxml"/>
     <module application="src/index.mxml" destPath="cn/framework/widgets/UserManagerWidget.swf" optimize="true" sourcePath="src/cn/framework/widgets/UserManagerWidget.mxml"/>
     <module application="src/index.mxml" destPath="cn/framework/widgets/RouteWidget.swf" optimize="true" sourcePath="src/cn/framework/widgets/RouteWidget.mxml"/>
+    <module application="src/index.mxml" destPath="cn/framework/widgets/StatisticWidget.swf" optimize="true" sourcePath="src/cn/framework/widgets/StatisticWidget.mxml"/>
   </modules>
   <buildCSSFiles/>
 </actionScriptProperties>

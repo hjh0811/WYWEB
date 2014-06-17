@@ -4,12 +4,32 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="group1_creationCompleteHandler(event)">
 	<fx:Script>
 		<![CDATA[
+			import cn.framework.FrameContainer;
+			
+			import mx.rpc.AsyncToken;
+			
+			import cn.framework.utils.WMTSLayer;
+			
+			import com.esri.ags.Graphic;
 			import com.esri.ags.Map;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.Polyline;
+			import com.esri.ags.layers.GraphicsLayer;
 			import com.esri.ags.layers.Layer;
+			import com.esri.ags.symbols.PictureMarkerSymbol;
+			import com.esri.ags.utils.JSONUtil;
+			
+			import flashx.textLayout.formats.VerticalAlign;
 			
 			import mx.collections.ArrayCollection;
 			import mx.collections.ArrayList;
+			import mx.controls.Label;
 			import mx.events.FlexEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			import spark.components.ToggleButton;
 
 			[Bindable]
 			private var _map:Map
@@ -18,12 +38,150 @@
 			{
 				this._map = value;
 				_map.addEventListener(MouseEvent.CLICK,baseClickHandler);
+				
+				var configXML:XML = FrameContainer.getInstance().configManager.configXML;
+				
+				var layerlist:XMLList = configXML.layers.layer;
+				
+				for each(var layerxml:XML in layerlist)
+				{
+					var showtype:String = layerxml.@showtype;
+					if(showtype == "check")
+					{
+						var url:String = layerxml.@url;
+						var visi:String = layerxml.@visible;
+						var layertype:String = layerxml.@type;
+						
+						if(layertype=="wmts")
+						{
+							var wmtslayer:WMTSLayer = new WMTSLayer;
+							wmtslayer.baseUrl = url;
+							wmtslayer.visible = visi=="true"?true:false;
+							wmtslayer.id = layerxml.@id;
+							wmtslayer.name = layerxml.@name;
+							this._map.addLayer(wmtslayer);
+						}
+						else if(layertype=="feature")
+						{
+							loadFeatures(layerxml);
+						}
+						var hgroud:HGroup = new HGroup;
+						hgroud.percentWidth = 100;
+						hgroud.verticalAlign = VerticalAlign.MIDDLE;
+						var layerLabel:Label = new Label;
+						layerLabel.percentWidth = 100;
+						layerLabel.text = layerxml.@name;
+						var toggleButton:ToggleButton = new ToggleButton;
+						toggleButton.styleName = "layerswicth";
+						toggleButton.name = layerxml.@id;
+						toggleButton.selected = visi=="true"?true:false;
+						toggleButton.width = 42;
+						toggleButton.height = 25;
+						toggleButton.addEventListener(MouseEvent.CLICK, layerSwitchhandler);
+						hgroud.addElement(layerLabel);
+						hgroud.addElement(toggleButton);
+						
+						this.baseContainer.addElement(hgroud);
+						
+					}
+				}
 			}
 			
+			private function loadFeatures(xml:XML):void
+			{
+				var httpservice:HTTPService = new HTTPService;
+				httpservice.url = xml.@url;
+				httpservice.resultFormat = "text";
+				httpservice.method = "GET";
+				var token:AsyncToken = httpservice.send(null);
+				token.tag = xml;
+				token.addResponder(new mx.rpc.Responder(dataResultHandler, fault));
+
+			}
+			
+			
+			
+			private function dataResultHandler(event:ResultEvent):void
+			{
+				var token:AsyncToken = event.token;
+				var layerXml:XML = token.tag as XML;
+				
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null || jsonObject["features"] == null) return; 	
+				
+				var graphicslayer:GraphicsLayer = new GraphicsLayer;
+				var visi:String = layerXml.@visible;
+				graphicslayer.id = layerXml.@id;
+				graphicslayer.visible = visi=="true"?true:false;
+				this._map.addLayer(graphicslayer);
+				
+				var jsonValues:Array = jsonObject["features"] as Array;
+				for each(var obj:Object in jsonValues)
+				{
+					if(obj["geometry"]==null) break;
+					var graphic:Graphic = new Graphic;
+					var pt:MapPoint;
+					if(obj["geometry"]["type"]=="Polygon")
+					{
+//						graphic.geometry =Geometry.fromJSON({"rings":obj["geometry"]["coordinates"] as Array});
+//						graphic.symbol = sfs;
+//						graphic.geometry.spatialReference = this.map.spatialReference;
+//						pt = graphic.geometry.extent.center;
+					}
+					else if(obj["geometry"]["type"]=="Point")
+					{
+						pt = new MapPoint(obj["geometry"]["coordinates"][0],obj["geometry"]["coordinates"][1]);
+						graphic.geometry = pt;
+						
+						var icon:String = layerXml.@icon;
+						var iconwidth:int = Number(layerXml.@iconwidth);
+						var iconheight:int = Number(layerXml.@iconheight);
+						graphic.symbol = new PictureMarkerSymbol(icon,iconwidth, iconheight);
+					}
+					else if(obj["geometry"]["type"]=="Polyline")
+					{
+						var polyline:Polyline = new Polyline;
+						polyline.paths = JSONUtil.decode(obj["geometry"]["coordinates"]) as Array;
+						graphic.geometry =polyline;
+						pt = graphic.geometry.extent.center;
+					}
+					graphicslayer.add(graphic);
+				}
+					
+//					var infoData:Object={name: obj["properties"][namefield], 
+//						icon: "assets/main/left_searchlist_icon.png",title: obj["properties"][namefield], //标题
+//						content: obj["properties"][contentfield], //字段内容
+//						point: pt, //位置点
+//						geometry:graphic
+//					};
+//					graphic.attributes = infoData;
+//					graphic.addEventListener(MouseEvent.MOUSE_MOVE, mouseOverGraphic);
+					
+			}
+			
+			private function fault(event:FaultEvent):void
+			{
+				
+			}
+
+			//图层控制
+			private function layerSwitchhandler(event:MouseEvent):void
+			{
+				var toggleButton:ToggleButton = event.currentTarget as ToggleButton;
+			    var swicthLayer:Layer = this._map.getLayer(toggleButton.name);
+				if(swicthLayer!=null)
+				{
+					if(swicthLayer.visible)
+						swicthLayer.visible = false;
+					else
+						swicthLayer.visible = true;
+				}
+			}
 			private function baseClickHandler(event:MouseEvent):void
 			{
-				base.visible = false;
-				base.includeInLayout =false;
+				baseContainer.visible = false;
+				baseContainer.includeInLayout =false;
 			}
 			
 			private function initBasemapList():void
@@ -40,15 +198,15 @@
 			
 			private function setBaseVisible():void
 			{
-				if(base.visible == true)
+				if(baseContainer.visible == true)
 				{
-					base.visible = false;
-					base.includeInLayout =false;
+					baseContainer.visible = false;
+					baseContainer.includeInLayout =false;
 				}
 				else
 				{
-					base.visible =true;
-					base.includeInLayout=true;
+					baseContainer.visible =true;
+					baseContainer.includeInLayout=true;
 				}
 			}
 			
@@ -57,13 +215,13 @@
 			protected function clickHandler(event:MouseEvent,index:int):void
 			{
 				var image:Image = event.currentTarget as Image;
-				img.source = image.source;
+//				img.source = image.source;
 				
 				selectedDrawingIcon = Image(event.currentTarget);
 				clearSelectionFilter();
 				selectedDrawingIcon.filters = [ glowFilter ];
 				
-				setBaseVisible();
+//				setBaseVisible();
 				if(index==0)
 				{
 					var layer:Layer = this._map.getLayer("dt");
@@ -130,15 +288,30 @@
 					  inner="false"
 					  strength="3"/>
 	</fx:Declarations>
-	<s:HGroup>
-		<s:HGroup id="base" gap="0" visible="false" includeInLayout="false">
-			<s:Image  source="assets/images/dt.png" click="clickHandler(event,0)"/>
-			<s:Image  source="assets/images/yx.png" click="clickHandler(event,1)"/>
+	<s:VGroup horizontalAlign="right" width="200" gap="3">
+		<s:Image id="img" source="assets/images/dt.png" click="img_clickHandler(event)"/>
+		<s:BorderContainer id="baseContainer" borderStyle="solid"  visible="false" includeInLayout="false" width="100%" cornerRadius="5">
+			<s:layout>
+				<s:VerticalLayout paddingLeft="10" paddingRight="10"   paddingTop="10" paddingBottom="10"  gap="10"/>
+			</s:layout>
+			<s:backgroundFill>
+				<s:SolidColor color="0xffffff"/>
+			</s:backgroundFill>
+		<s:HGroup id="base" gap="15" horizontalAlign="center" width="100%">
+			<s:Image  source="assets/images/layer_dxt.png" width="80" height="52" click="clickHandler(event,0)" filters="{[glowFilter]}"/>
+			<s:Image  source="assets/images/layer_yxt.jpg" width="80" height="52" click="clickHandler(event,1)"/>
 			<!--<s:Image  source="assets/images/ght.png" click="clickHandler(event,2)"/>
 			<s:Image  source="assets/images/xzt.png" click="clickHandler(event,3)"/>
-			
 			<s:Image  source="assets/images/sw.png" click="clickHandler(event,5)"/>-->
 		</s:HGroup>
-		<s:Image id="img" source="assets/images/dt.png" click="img_clickHandler(event)"/>
-	</s:HGroup>
+		<!--<s:HGroup verticalAlign="middle" width="100%">
+			<s:Label  text="地质灾害" width="100%" />
+			<s:ToggleButton styleName="layerswicth" width="42" height="25"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" width="100%">
+			<s:Label text="地质灾害" width="100%" />
+			<s:ToggleButton styleName="layerswicth" width="42" height="25"/>
+		</s:HGroup>-->
+		</s:BorderContainer>
+	</s:VGroup>
 </s:Group>

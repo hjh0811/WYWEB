@@ -6,32 +6,30 @@
     <!--<servletcontext>http://115.29.5.226:8080/flexservice/</servletcontext>  -->
     <servletcontext>http://localhost:8080/lcly/</servletcontext>
 	<layers>
-	    <layer id="dt" url="http://218.15.41.59:8719/wmts/sg_gz_map/Default/epsg:4610/" visible="true"></layer>
-	    <layer id="yx" url="http://218.15.41.59:8719/wmts/sg_gz_image_map/Default/epsg:4610/" visible="false"></layer>
-	    <layer id="zj" url="http://218.15.41.59:8719/wmts/sg_gz_image_zj/Default/epsg:4610/" visible="false"></layer>
-	    <!--<layer id="csztgh" name="城市总体规划" url="http://218.15.41.59:8719/wmts/rh_cjgh_qp2000/Default/epsg:4490/" visible="false" dynamic="true"></layer>
-	    <layer id="tdlyxz" name="土地利用现状" url="http://218.15.41.59:8719/wmts/rh_csztgh_qp2000/Default/epsg:4490/" visible="false" dynamic="true"></layer>
-	    <layer id="tdlyztgh" name="土地总体规划" url="http://218.15.41.59:8719/wmts/rh_tdlyztgh_qp2000/Default/epsg:4490/" visible="false" dynamic="true"></layer>
-	     
-	    <layer id="dt" url="http://19.64.104.200:8719/wmts/sg_zw_map/Default/epsg:4610/" visible="true"></layer>
-	    <layer id="yx" url="http://19.64.104.200:8719/wmts/sg_zw_image_map/Default/epsg:4610/" visible="false"></layer>
-	    <layer id="zj" url="http://19.64.104.200:8719/wmts/sg_zw_image_map_zj/Default/epsg:4610/" visible="false"></layer>
-	     -->
-	    </layers>
+	    <layer id="dt" url="http://218.15.41.59:8719/wmts/sg_gz_map/Default/epsg:4610/" showtype="base" type="wmts" visible="true"></layer>
+	    <layer id="yx" url="http://218.15.41.59:8719/wmts/sg_gz_image_map/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
+	    <layer id="zj" url="http://218.15.41.59:8719/wmts/sg_gz_image_zj/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
+
+	    <layer id="csztgh" name="城市总体规划" url="http://218.15.41.59:8719/wmts/rh_cjgh_qp2000/Default/epsg:4490/" showtype="check" type="wmts" visible="false" dynamic="true"></layer>
+	    <layer id="tdlyxz" name="土地利用现状" url="http://218.15.41.59:8719/wmts/rh_csztgh_qp2000/Default/epsg:4490/" showtype="check" type="wmts" visible="false" dynamic="true"></layer>
+	    <layer id="tdlyztgh" name="土地总体规划" url="http://218.15.41.59:8719/wmts/rh_tdlyztgh_qp2000/Default/epsg:4490/" showtype="check" type="wmts" visible="false" dynamic="true"></layer> 
+	    <layer id="ddzh" name="地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="false"></layer>
+	    
+	    <layer id="dz" name="地质灾害地裂缝" url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=sg_dzzh_dlf&request=Query" showtype="check" type="feature" visible="false" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"/>
+    </layers>
+	    
 	<querylayers>
 	    <!-- 政务外网 -->
-	    <querylayer name="地名地址" displayname="地名地址" queryfield="ADDNAME" namefield="NAME" contentfield="ADDNAME" 
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000&request=Query&MAXFEATURES=10"></querylayer>
-	    <!-- <querylayer name="重点项目" displayname="仁化县重点项目" queryfield="MCMS" namefield="MCMS" contentfield="ZRDW" 
-	        url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=ZDXM&request=Query&MAXFEATURES=10"></querylayer> -->
-	   
-	    <!-- 互联网 -->
-	    <!-- <querylayer name="单位" namefield="STANDARD_N" contentfield="TOWN" url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=mz_dw&request=Query&MAXFEATURES=10"></querylayer>
-	    <querylayer name="酒店" namefield="酒店名称" contentfield="酒店地址" url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=ly_xjjd&MAXFEATURES=10&request=query"></querylayer>
-	    <querylayer name="地名" namefield="NAME" contentfield="ADDNAME" url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=sg_dmdz&request=Query&MAXFEATURES=10"></querylayer>
-	    <querylayer name="山峰" namefield="STANDARD_N" contentfield="TOWN" url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=mz_sf&request=Query&MAXFEATURES=10"></querylayer>
-	    <querylayer name="景点" namefield="SHORTNAME" contentfield="ADDNAME" url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=rh_lyjd&request=query&MAXFEATURES=10"></querylayer>
-	    <querylayer name="公交" namefield="STATION" contentfield="STATIONNUM" url="http://19.64.104.200:8719/NewMapServer/WebServices/FeatureServer.php?layer=busStation&request=Query&MAXFEATURES=10"></querylayer>-->
+	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"
+	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000&request=Query">
+	        <queryfield displayname="名称" name="NAME"></queryfield>
+	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
+	    </querylayer>
+	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/icon/pin/p1.png" iconwidth="21" iconheight="20"
+	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000&request=Query">
+	        <queryfield displayname="名称" name="NAME"></queryfield>
+	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
+	    </querylayer>
 	</querylayers>
 	
 	<statistic>

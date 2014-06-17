@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<framework:BaseWidget xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:framework="cn.framework.*" fontFamily="SimSun" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" layout="absolute" width="100%" creationComplete="init()"  fontSize="12"  height="100%" xmlns:esri="http://www.esri.com/2008/ags" xmlns:components="cn.framework.components.*">
+	<fx:Script>
+		<![CDATA[
+		
+			private function init():void
+			{
+				
+			}
+		]]>
+	</fx:Script>
+</framework:BaseWidget>

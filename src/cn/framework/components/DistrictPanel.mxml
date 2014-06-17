@@ -5,10 +5,10 @@
 			minHeight		="35" 
 			height			="40"
 			styleName		="RecordCanvas" 
-			backgroundAlpha	="0.3" 
+			backgroundAlpha	="0" 
 			useHandCursor	="true" 
 			buttonMode		="true" 
-			borderColor="#30A5F7" cornerRadius="6" borderStyle="solid" backgroundColor="#8BC9F8"
+			borderColor="#30A5F7" cornerRadius="6" borderStyle="none" backgroundColor="#8BC9F8"
 			mouseOver		="mouseOverRow()" 
 			mouseOut		="mouseOutRow()"  verticalScrollPolicy="off"
 			verticalAlign	="middle">
@@ -74,12 +74,12 @@
 						
 			private function mouseOverRow():void
 			{
-				this.setStyle("backgroundAlpha", 0.9);
+				this.setStyle("backgroundAlpha", 0.3);
 			}
 						
 			private function mouseOutRow():void
 			{
-				this.setStyle("backgroundAlpha", 0.3);
+				this.setStyle("backgroundAlpha", 0);
 			}
             private function clickSelect(event:MouseEvent):void
             {
@@ -96,20 +96,20 @@
 //				PopUpManager.centerPopUp(project);
 //				project.infoData = this._infoData;
 			}
-
+			
 		]]>
 	</mx:Script>
 				
 	<mx:Image id="recIcon" source="{recicon}" width="20" height="20">
-		<mx:filters>
+		<!--<mx:filters>
 			<flash:GlowFilter color="#000000" alpha="0.5" blurX="10" blurY="10"/>
-		</mx:filters>
+		</mx:filters>-->
 	</mx:Image>
 	
 	<mx:VBox verticalGap="0" width="100%" verticalScrollPolicy="off">
-		<mx:VBox verticalGap="0" width="100%" mouseChildren="false" useHandCursor="true" verticalAlign="middle" toolTip="{content}" buttonMode="true" verticalScrollPolicy="off">
+		<mx:VBox verticalGap="0" width="100%" mouseChildren="false" useHandCursor="true" verticalAlign="middle"  toolTip="{content}" buttonMode="true" verticalScrollPolicy="off">
 			<mx:Label selectable="false" styleName="RecordText" fontWeight="bold" text="{title}" width="100%"/>
-			<!--<mx:Label selectable="false"   fontSize="12" text="{content}"  width="98%"/>-->
+			<mx:Label selectable="false"   fontSize="12" text="{content}"  width="98%"/>
 		</mx:VBox>
 	</mx:VBox>
 	<!--<mx:Image id="CarInfo" source="assets/images/w_link.png" includeInLayout="{checkFlag}" visible="{checkFlag}" useHandCursor="true" buttonMode="true" click="CarInfo_clickHandler(event)"/>-->

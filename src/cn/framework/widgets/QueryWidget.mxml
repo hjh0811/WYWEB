@@ -10,6 +10,11 @@
 		@namespace esri "http://www.esri.com/2008/ags";
 		@namespace components "cn.framework.components.*";
 		
+		
+		mx|ToolTip
+		{
+			font-size:12;
+		}
 	</fx:Style>
 	<fx:Script>
 		<![CDATA[
@@ -20,8 +25,11 @@
 			
 			import com.esri.ags.Graphic;
 			import com.esri.ags.Map;
+			import com.esri.ags.events.DrawEvent;
 			import com.esri.ags.events.TimeExtentEvent;
+			import com.esri.ags.geometry.Geometry;
 			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.Polygon;
 			import com.esri.ags.geometry.Polyline;
 			import com.esri.ags.layers.GraphicsLayer;
 			import com.esri.ags.symbols.LineSymbol;
@@ -33,7 +41,9 @@
 			import mx.controls.Alert;
 			import mx.core.UIComponent;
 			import mx.effects.Move;
+			import mx.events.ListEvent;
 			import mx.formatters.DateFormatter;
+			import mx.managers.CursorManager;
 			import mx.rpc.events.ResultEvent;
 			import mx.rpc.http.HTTPService;
 			
@@ -42,24 +52,382 @@
 			import spark.events.TextOperationEvent;
 			private var serviceURL:String;
 			
-			private var jdGraphicslayer:GraphicsLayer = new GraphicsLayer;
-			private var pathGraphicslayer:GraphicsLayer = new GraphicsLayer;
-			private var graphicsLayerHistory:GraphicsLayer = new GraphicsLayer;
+			private var graphicsLayer:GraphicsLayer = new GraphicsLayer;
+			private var drawLayer:GraphicsLayer;
 			
 			[Bindable]
-			private var rfzsNUM:String;
+			private var queryLayerList:XMLList;
 			[Bindable]
-			private var rfDataSource:ArrayCollection;
+			private var queryLayerFieldList:XMLList;
+			public var dicQueryLayer:Dictionary = new Dictionary;
+			
+			[Bindable]
+			private var pageSize:int = 10;
 			
 			private function init():void
 			{
 				serviceURL = FrameContainer.getInstance().serviceManager.serviceURL;
-				this.map.addLayer(pathGraphicslayer);
-				this.map.addLayer(jdGraphicslayer);
-				this.map.addLayer(graphicsLayerHistory);
+				this.map.addLayer(graphicsLayer);
+				
+				drawLayer = this.map.getLayer("drawLayer") as GraphicsLayer;
+				
+				var configXML:XML = FrameContainer.getInstance().configManager.configXML;
+				
+				queryLayerList = configXML..querylayer;
+				
+				queryLayerFieldList = queryLayerList[0].queryfield as XMLList;
 			}
 			
 
+
+			protected function layerComb_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				var xmlitem:XML = this.layerComb.selectedItem as XML;
+				if(xmlitem!=null)
+					queryLayerFieldList = xmlitem.queryfield;
+			}
+
+
+			private var fisrtQuery:Boolean = true;
+			private var pageWhereURL:String;
+			private function queryForNewMap():void
+			{
+				fisrtQuery = true;
+				this.zsNum = "";
+				var layerXML:XML = this.layerComb.selectedItem as XML;
+				var fieldXML:XML = this.layerFieldComb.selectedItem as XML;
+				var queryField:String = fieldXML.@name;
+				var httpservice:HTTPService = new HTTPService;
+				pageWhereURL = layerXML.@url  + encodeURI("&where=" + queryField + " like '%"+queryText.text+"%'");
+				httpservice.url =pageWhereURL + "&MAXFEATURES=" + pageSize + "&page=1";
+				httpservice.method = "GET";
+				httpservice.resultFormat = "text";
+				httpservice.addEventListener(ResultEvent.RESULT,newMapResultHandler);
+				httpservice.send(null);
+				
+				var countHttpservice:HTTPService = new HTTPService;
+				countHttpservice.url = pageWhereURL + "&MAXFEATURES=1&page=1&RETTYPE=2";
+				countHttpservice.method = "GET";
+				countHttpservice.resultFormat = "text";
+				countHttpservice.addEventListener(ResultEvent.RESULT,countResultHandler);
+				countHttpservice.send(null);
+				CursorManager.setBusyCursor();
+			}
+			
+			private function countResultHandler(event:ResultEvent):void
+			{
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null || jsonObject["content"] == null || jsonObject["content"]["features"] == null) return; 	
+				
+				var count:int = Number(jsonObject["header"]["pages"]);
+				this.zsNum ="(共"+count+"条)";
+				
+				if(count>0)
+				{
+					pageBar.visible =true;
+					this.pageBar.isCreateNavBar =true;
+					this.pageBar.totalRecord = count;
+					this.pageBar.dataBind(true);
+					this.pageBar.setFirst();
+				}
+				else
+				{
+					pageBar.visible = false;
+				}
+			}
+			
+			private function newMapResultHandler(event:ResultEvent):void
+			{
+				var layerXML:XML = this.layerComb.selectedItem as XML;
+				CursorManager.removeBusyCursor();
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null || jsonObject["content"] == null || jsonObject["content"]["features"] == null) return; 	
+
+				var jsonValues:Array = jsonObject["content"]["features"] as Array
+				this.recAC = new ArrayCollection;
+				graphicsLayer.clear();
+				this.map.infoWindow.hide();
+				var namefield:String = layerXML.@namefield;
+				var contentfield:String = layerXML.@contentfield;
+				for each(var obj:Object in jsonValues)
+				{
+					if(obj["geometry"]==null) break;
+					var graphic:Graphic = new Graphic;
+					
+					var pt:MapPoint;
+					if(obj["geometry"]["type"]=="Polygon")
+					{
+						graphic.geometry =Geometry.fromJSON({"rings":obj["geometry"]["coordinates"] as Array});
+						graphic.symbol = sfs;
+						pt = graphic.geometry.extent.center;
+					}
+					else if(obj["geometry"]["type"]=="Point")
+					{
+						pt = new MapPoint(obj["geometry"]["coordinates"][0],obj["geometry"]["coordinates"][1]);
+						graphic.geometry = pt;
+						var icon:String = layerXML.@icon;
+						var iconwidth:int = Number(layerXML.@iconwidth);
+						var iconheight:int = Number(layerXML.@iconheight);
+						graphic.symbol = new PictureMarkerSymbol(icon,iconwidth, iconheight);
+					}
+					else if(obj["geometry"]["type"]=="Polyline")
+					{
+						graphic.geometry =Geometry.fromJSON({"paths":obj["geometry"]["coordinates"] as Array});
+						graphic.symbol = sls;
+						pt = graphic.geometry.extent.center;
+					}
+					graphic.geometry.spatialReference = this.map.spatialReference;
+					
+					var infoData:Object={name: obj["properties"][namefield], //设备名称
+						icon: layerXML.@icon,title: obj["properties"][namefield], //标题
+						content: obj["properties"][contentfield], //字段内容
+						point: pt, //位置点
+						geometry:graphic
+					};
+					graphic.attributes = infoData;
+					graphic.addEventListener(MouseEvent.MOUSE_MOVE, mouseOverGraphic);
+					this.graphicsLayer.add(graphic);
+					this.recAC.addItem(infoData);
+				}
+				
+				//				this.pageBar.navigateButtonClick('firstPage');
+			}
+			
+			[Bindable]
+			private var zsNum:String= "";
+			[Bindable]
+			private var recAC:ArrayCollection;   //结果数据
+			private function pageNewMapResultHandler(event:ResultEvent):void
+			{
+				var layerXML:XML = this.layerComb.selectedItem as XML;
+				CursorManager.removeBusyCursor();
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null || jsonObject["content"] == null || jsonObject["content"]["features"] == null) return; 	
+				
+				var jsonValues:Array = jsonObject["content"]["features"] as Array
+				this.recAC = new ArrayCollection;
+				graphicsLayer.clear();
+				this.map.infoWindow.hide();
+				var namefield:String = layerXML.@namefield;
+				var contentfield:String = layerXML.@contentfield;
+				for each(var obj:Object in jsonValues)
+				{
+					if(obj["geometry"]==null) break;
+					var graphic:Graphic = new Graphic;
+					var pt:MapPoint;
+					if(obj["geometry"]["type"]=="Polygon")
+					{
+						graphic.geometry =Geometry.fromJSON({"rings":obj["geometry"]["coordinates"] as Array});
+						graphic.symbol = sfs;
+						graphic.geometry.spatialReference = this.map.spatialReference;
+						pt = graphic.geometry.extent.center;
+					}
+					else if(obj["geometry"]["type"]=="Point")
+					{
+						pt = new MapPoint(obj["geometry"]["coordinates"][0],obj["geometry"]["coordinates"][1]);
+						graphic.geometry = pt;
+
+						var icon:String = layerXML.@icon;
+						var iconwidth:int = Number(layerXML.@iconwidth);
+						var iconheight:int = Number(layerXML.@iconheight);
+						graphic.symbol = new PictureMarkerSymbol(icon,iconwidth, iconheight);
+					}
+					else if(obj["geometry"]["type"]=="Polyline")
+					{
+						var polyline:Polyline = new Polyline;
+						polyline.paths = JSONUtil.decode(obj["geometry"]["coordinates"]) as Array;
+						graphic.geometry =polyline;
+						pt = graphic.geometry.extent.center;
+					}
+					
+					var infoData:Object={name: obj["properties"][namefield], 
+						icon: "assets/main/left_searchlist_icon.png",title: obj["properties"][namefield], //标题
+						content: obj["properties"][contentfield], //字段内容
+						point: pt, //位置点
+						geometry:graphic
+					};
+					graphic.attributes = infoData;
+					graphic.addEventListener(MouseEvent.MOUSE_MOVE, mouseOverGraphic);
+					this.graphicsLayer.add(graphic);
+					
+					this.recAC.addItem(infoData);
+				}
+			}
+
+			[Bindable]
+			private var pageID:int=0;
+			private function pagingFunction(pageIndex:int, pageSize:int):void
+			{
+				pageID=pageIndex * pageSize;
+				
+				if(fisrtQuery == true)
+				{
+					fisrtQuery = false;
+				}
+				else
+				{
+					var obj:Object = this.layerComb.selectedItem as Object;
+					var httpservice:HTTPService = new HTTPService;
+					httpservice.url =pageWhereURL + "&page=" + (pageIndex +1);
+					httpservice.method = "GET";
+					httpservice.resultFormat = "text";
+					httpservice.addEventListener(ResultEvent.RESULT,pageNewMapResultHandler);
+					httpservice.send(null);
+					CursorManager.setBusyCursor();
+				}
+			}
+			
+			private var selectGra:Graphic;  //选择图形
+			private function mouseOverGraphic(event:MouseEvent):void
+			{
+				var gra:Graphic=event.currentTarget as Graphic;
+				var infoData:Object=gra.attributes;
+				var pt:MapPoint=infoData.point;
+				if(gra.geometry is Polyline)
+				{
+					if(selectGra!=null) 
+					{
+						selectGra.symbol = sls;  //取消前一图形选中状态
+					}
+					selectGra= gra;
+					gra.symbol = highline;
+				}
+				else if(gra.geometry is Polygon)
+				{
+					if(selectGra!=null) 
+					{
+						selectGra.symbol = sfs;
+					}
+					selectGra= gra;
+					gra.symbol = highFill;
+				}
+				this.map.infoWindow.label = " "+infoData.title;
+				this.map.infoWindow.show(infoData.point);
+				
+			}
+			
+			private function clickRecord(event:MouseEvent):void
+			{
+				var infoData:Object=event.currentTarget.infoData;
+				var pt:MapPoint=infoData.point;
+				var gra:Graphic=infoData.geometry as Graphic;
+				
+				if(gra.geometry is Polyline)
+				{
+					if(selectGra!=null) 
+					{
+						selectGra.symbol = sls;
+					}
+					selectGra= gra;
+					gra.symbol = highline;
+				}
+				else if(gra.geometry is Polygon)
+				{
+					if(selectGra!=null) 
+					{
+						selectGra.symbol = sfs;
+					}
+					selectGra= gra;
+					gra.symbol = highFill;
+				}
+				
+				if(pt==null) return;
+				
+				this.map.infoWindow.label = " " + infoData.title;
+				this.map.infoWindow.content= null;
+				this.map.infoWindow.show(pt);
+				this.map.centerAt(pt);
+				this.map.level=5;
+			}
+			
+			private function clearSelectionFilter():void
+			{
+				for (var i:int = 0; i < drawContainer.numChildren; i++)
+				{
+					if (drawContainer.getChildAt(i).filters && drawContainer.getChildAt(i).filters.length > 0)
+					{
+						if (!(selectedDrawingIcon && drawContainer.getChildAt(i) === selectedDrawingIcon))
+						{
+							drawContainer.getChildAt(i).filters = [];
+						}
+					}
+				}
+			}
+			
+			private var selectedDrawingIcon:Image;
+			private var drawType:String;
+			private function activateDrawTool(event:MouseEvent):void
+			{
+				selectedDrawingIcon = Image(event.currentTarget);
+				clearSelectionFilter();
+				selectedDrawingIcon.filters = [ glowFilter ];
+				drawType = selectedDrawingIcon.name;
+				switch (drawType)
+				{
+					case DrawTool.MAPPOINT:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.POLYLINE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.FREEHAND_POLYLINE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.EXTENT:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.CIRCLE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.ELLIPSE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.POLYGON:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.FREEHAND_POLYGON:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case "Clear":
+					{
+						clear();
+						break;
+					}
+				}
+			}
+			
+			private function map_drawEndHandler(event:DrawEvent):void
+			{
+				drawLayer.clear();
+				drawLayer.add(event.graphic);
+				this.drawTool.deactivate();
+			}
+			
+			private function clear():void
+			{
+				graphicsLayer.clear();
+				if(drawLayer!=null) drawLayer.clear();
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -72,37 +440,82 @@
 			<s:SimpleMotionPath property="alpha" 
 								valueFrom="1.0" valueTo="0.0" /> 
 		</s:Animate> 
+		
+		<!-- Symbol for lines -->
+		<esri:SimpleLineSymbol id="sls" style="solid" color="0x0000FF" width="3"/>
+		<esri:SimpleLineSymbol id="highline" style="solid" color="0x00ffff" width="3"/>
+		
+		<!-- Symbol for polygons -->
+		<esri:SimpleFillSymbol id="sfs" style="forwarddiagonal" alpha="1"  color="0x00ff00">
+			<esri:outline>
+				<esri:SimpleLineSymbol color="0x00ffff" width="2"/>
+			</esri:outline>
+		</esri:SimpleFillSymbol>
+		<esri:SimpleFillSymbol id="highFill" style="solid" alpha="0.5"  color="0x00ff00">
+			<esri:outline>
+				<esri:SimpleLineSymbol color="0x00ffff" width="3"/>
+			</esri:outline>
+		</esri:SimpleFillSymbol>
+		<s:GlowFilter id="glowFilter"
+					  alpha="1"
+					  color="{getStyle('focusColor')}"
+					  inner="false"
+					  strength="3"/>
+		<esri:DrawTool id="drawTool" drawEnd="map_drawEndHandler(event)" map="{map}" snapMode="alwaysOn" snapOption="edgeAndVertex"/> 
 	</fx:Declarations>
 	<s:VGroup width="100%" height="100%" gap="0">
-		<mx:VBox verticalScrollPolicy="off" width="100%" height="100%" horizontalGap="5" paddingTop="5" paddingLeft="5" paddingRight="5" verticalGap="8" verticalAlign="top" horizontalAlign="left">
+		<mx:VBox  verticalScrollPolicy="off" width="100%" height="100%" horizontalGap="5" paddingTop="5" verticalGap="10" verticalAlign="top" horizontalAlign="left">
 			<mx:HBox verticalAlign="middle"  width="100%"  paddingLeft="10" paddingRight="10" paddingTop="15">
-				<mx:Label text="图  层:" width="60"/><mx:ComboBox id="layerComb" labelField="@label" width="100%" height="25"/>
+				<mx:Label text="图  层:" width="60"/><mx:ComboBox id="layerComb" labelField="@displayname" width="100%" height="25" dataProvider="{queryLayerList}" change="layerComb_changeHandler(event)"/>
 			</mx:HBox>
-			<mx:HBox verticalAlign="middle"  width="100%"  paddingLeft="10" paddingRight="10">
-				<mx:Label text="字  段:" width="60"/><mx:ComboBox id="layerFieldComb" labelField="@label" width="100%" height="25"/>
-			</mx:HBox>
-			<mx:HBox width="100%"  verticalAlign="middle" paddingLeft="10" paddingRight="10">
-				<mx:Label text="关键字:" width="60"/><mx:TextInput id="keyWord" width="100%" paddingBottom="5" paddingRight="5" />
-			</mx:HBox>
+			<mx:TabNavigator width="100%" height="160">
+			<mx:VBox width="100%" height="100%" label="属性查询">
+				<mx:HBox verticalAlign="middle"  width="100%"  paddingLeft="10" paddingRight="10" paddingTop="15">
+					<mx:Label text="字  段:" width="60"/><mx:ComboBox id="layerFieldComb" labelField="@displayname" width="100%" height="25" dataProvider="{queryLayerFieldList}"/>
+				</mx:HBox>
+				<mx:HBox width="100%"  verticalAlign="middle" paddingLeft="10" paddingRight="10">
+					<mx:Label text="关键字:" width="60"/><mx:TextInput id="queryText" width="100%" paddingBottom="5" paddingRight="5" />
+				</mx:HBox>		
+				<mx:HBox width="100%" horizontalAlign="right" paddingRight="10" verticalAlign="middle">
+					<mx:Image source="assets/buttons/query.png" buttonMode="true" useHandCursor="true" click="queryForNewMap()"/>
+				</mx:HBox>
+			</mx:VBox>
 			
-			<mx:HBox width="100%" horizontalAlign="right" paddingRight="10" verticalAlign="middle">
-				<mx:Image source="assets/buttons/query.png" buttonMode="true" useHandCursor="true" />
-			</mx:HBox>
-			
-			<mx:HRule width="100%"/>
+			<mx:VBox width="100%" height="100%" label="空间查询">
+					<mx:HBox id="drawContainer" paddingTop="30" horizontalAlign="center" width="100%" horizontalGap="8" verticalAlign="middle">
+						<mx:Image  source="assets/images/i_draw_rect.png" useHandCursor="true" buttonMode="true" toolTip="画矩形" name="{DrawTool.EXTENT}" click="activateDrawTool(event)" width="40" height="40"/>
+						<mx:Image  source="assets/images/i_draw_circle.png" useHandCursor="true" buttonMode="true" toolTip="画圆" name="{DrawTool.CIRCLE}" click="activateDrawTool(event)" width="40"
+								   height="40"/>
+						<mx:Image  source="assets/images/i_draw_poly.png" useHandCursor="true" buttonMode="true" toolTip="画多边形" name="{DrawTool.POLYGON}" click="activateDrawTool(event)" width="40"
+								   height="40"/>
+						<mx:Image source="assets/images/i_draw_freepoly.png" useHandCursor="true" buttonMode="true" toolTip="画随意图形" name="{DrawTool.FREEHAND_POLYGON}" click="activateDrawTool(event)"
+								  width="40" height="40"/>
+						<mx:Image  source="assets/images/i_clear.png" useHandCursor="true" buttonMode="true" toolTip="清除" name="clear" click="activateDrawTool(event)" width="40" height="40"/>
+					</mx:HBox>
+			</mx:VBox>
+		</mx:TabNavigator>	
+			<!--<mx:HBox width="100%" verticalAlign="middle" horizontalAlign="center" paddingLeft="5" paddingRight="5">
+				<mx:HRule width="100%"/>
+			</mx:HBox>-->
 			<mx:VBox width="100%" height="100%" verticalGap="1">
 				<mx:HBox verticalAlign="middle" verticalGap="8" paddingLeft="5" paddingTop="3">
 					<mx:Image source="assets/buttons/comment.png" width="25" height="25"/>
-					<mx:Text text="查询结果" fontSize="12"/><mx:Text text="{this.rfzsNUM}"/>
+					<mx:Text text="查询结果" fontSize="12"/><mx:Text text="{this.zsNum}"/>
 				</mx:HBox>
 				<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off">
-					<mx:VBox  verticalGap="3" width="100%" height="100%" paddingLeft="5" paddingTop="3" paddingBottom="3" horizontalScrollPolicy="off">
-						<mx:Repeater id="renfangRepeater" dataProvider="{this.rfDataSource}">
-							<components:DistrictPanel infoData="{renfangRepeater.currentItem}"  checkFlag="true"/>
+					<mx:VBox  verticalGap="3" width="100%" height="100%" paddingLeft="0" paddingTop="3" paddingBottom="3" horizontalScrollPolicy="off">
+						<mx:Repeater id="renfangRepeater" dataProvider="{this.recAC}">
+							<components:DistrictPanel infoData="{renfangRepeater.currentItem}" click="clickRecord(event)"  checkFlag="true"/>
 						</mx:Repeater>
 					</mx:VBox>
 				</mx:Canvas>
+				<components:PagerBar id="pageBar" paddingLeft="5" 
+								pageSize="{pageSize}"
+								navSize="5"  
+								pagingFunction="pagingFunction"
+								visible="false"/>
 			</mx:VBox>
 		</mx:VBox>
+
 	</s:VGroup>
 </framework:BaseWidget>
