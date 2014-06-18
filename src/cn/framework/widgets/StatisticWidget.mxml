@@ -1,14 +1,306 @@
 <?xml version="1.0" encoding="utf-8"?>
 <framework:BaseWidget xmlns:fx="http://ns.adobe.com/mxml/2009" 
-					  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:framework="cn.framework.*" fontFamily="SimSun" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:framework="cn.framework.*" fontFamily="SimSun"   xmlns:charts="cn.framework.utils.charts.*" xmlns:amcharts="http://www.amcharts.com/com_internal"
 					  xmlns:mx="library://ns.adobe.com/flex/mx" layout="absolute" width="100%" creationComplete="init()"  fontSize="12"  height="100%" xmlns:esri="http://www.esri.com/2008/ags" xmlns:components="cn.framework.components.*">
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace framework "cn.framework.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace esri "http://www.esri.com/2008/ags";
+		@namespace components "cn.framework.components.*";
+		
+		mx|ToolTip
+		{
+			font-size:12;
+		}
+	</fx:Style>
 	<fx:Script>
 		<![CDATA[
+			import cn.framework.FrameContainer;
+			import cn.framework.windows.StatisticWindow;
+			
+			import com.amcharts.AmPieChart;
+			import com.amcharts.chartClasses.AmChart;
+			import com.esri.ags.Graphic;
+			import com.esri.ags.events.DrawEvent;
+			import com.esri.ags.geometry.Extent;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.Polygon;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.tools.DrawTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.managers.CursorManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
 		
+			[Bindable]
+			private var staticlayerlist:XMLList;
+			[Bindable]
+			private var classfieldlist:XMLList;
+			[Bindable]
+			private var statfieldlist:XMLList;
+			private var drawLayer:GraphicsLayer;
+			
 			private function init():void
 			{
+				drawLayer = this.map.getLayer("drawLayer") as GraphicsLayer;
+				var configXML:XML = FrameContainer.getInstance().configManager.configXML;
+				staticlayerlist = configXML..staticlayer;
 				
+				if(staticlayerlist!=null)
+				{
+					classfieldlist = staticlayerlist[0].classfield;
+					statfieldlist = staticlayerlist[0].sumfield;
+				}
 			}
+			
+			
+			private function statistic():void
+			{
+				var layerXml:XML = layerComb.selectedItem as XML;
+				var httpservice:HTTPService = new HTTPService;
+				
+				
+				var graphicAC:ArrayCollection = drawLayer.graphicProvider as ArrayCollection;
+				if(graphicAC!=null && graphicAC.length >0)
+				{
+					var graphic:Graphic = graphicAC.getItemAt(0) as Graphic;
+					var extentStr:String="";
+					if(graphic.geometry is Polygon)
+					{
+						var polygon:Polygon = graphic.geometry as Polygon;
+						var array:Array = polygon.rings[0];
+						var fisrt:Boolean =true;
+						for each(var point:MapPoint in array)
+						{
+							if(fisrt)
+							{
+								fisrt=false;
+								extentStr="&polygon="+point.x +","+point.y;
+							}
+							else
+							{
+								extentStr=extentStr+ ","+ point.x +","+point.y;
+							}
+						}
+					}
+					else if(graphic.geometry is Extent)
+					{
+						var extent:Extent = graphic.geometry as Extent;
+						extentStr="&bbox=" +extent.xmin+"," + extent.ymin+"," + extent.xmax+"," + extent.ymax;
+					}
+					
+					httpservice.url = layerXml.@url + "&request=SpatialQuery&RETTYPE=2" + extentStr;
+				}
+				else
+				{
+					httpservice.url = layerXml.@url + "&request=Query&RETTYPE=2";
+				}
+				
+				httpservice.method = "POST";
+				httpservice.resultFormat = "text";
+				httpservice.addEventListener(ResultEvent.RESULT,statiticResultHandler);
+				httpservice.send(null);
+			}
+			
+			[Bindable]
+			private var staticArray:Array;
+			private function statiticResultHandler(event:ResultEvent):void
+			{
+				CursorManager.removeBusyCursor();
+				if(event.result==null || event.result=="") return; 
+				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
+				if(jsonObject==null || jsonObject["features"] == null) return; 	
+				
+				var typeXml:XML = typeComb.selectedItem as XML;
+				var statXml:XML = statComb.selectedItem as XML;
+				
+				var jsonValues:Array = jsonObject["features"] as Array;
+				
+				var classField:String = typeXml.@name;
+				var sumField:String = statXml.@name;
+				
+				var dictionary:Dictionary = new Dictionary;
+				staticArray = new Array;
+				///累加
+				if(sumField == "COUNT")
+				{
+					for each(var object:Object in jsonValues)
+					{
+						var titleName:String = object["properties"][classField];
+						if(dictionary[titleName] == null)
+						{
+							dictionary[titleName] = 1;
+						}
+						else
+						{
+							dictionary[titleName] = Number(dictionary[titleName]) +  1;
+						}
+					}
+				}
+				else
+				{
+					for each(var obj:Object in jsonValues)
+					{
+						var title:String = obj["properties"][classField];
+						if(dictionary[title] == null)
+						{
+							dictionary[title] = Number(obj["properties"][sumField]);
+						}
+						else
+						{
+							dictionary[title] = dictionary[title] +  Number(obj["properties"][sumField]);
+						}
+					}
+				}
+				
+				
+				for(var key:String in dictionary)
+				{
+					staticArray.push({name:key, zs:dictionary[key]});
+				}
+				
+				if(staticArray.length>0)
+				{
+					var project:StatisticWindow = PopUpManager.createPopUp(this.parentApplication.parent,StatisticWindow,true) as StatisticWindow;
+					PopUpManager.centerPopUp(project);
+					project.array = staticArray;
+				}
+				else
+				{
+					Alert.show("无统计结果");
+				}
+			}
+			
+			
+			private function activateDrawTool(event:MouseEvent):void
+			{
+				selectedDrawingIcon = Image(event.currentTarget);
+				clearSelectionFilter();
+				selectedDrawingIcon.filters = [ glowFilter ];
+				var drawType:String = selectedDrawingIcon.name;
+				switch (drawType)
+				{
+					case DrawTool.MAPPOINT:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.POLYLINE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.FREEHAND_POLYLINE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.EXTENT:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.CIRCLE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.ELLIPSE:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.POLYGON:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case DrawTool.FREEHAND_POLYGON:
+					{
+						drawTool.activate(drawType,true);
+						break;
+					}
+					case "Clear":
+					{
+						clear();
+						break;
+					}
+				}
+			}
+			
+			private function clear():void
+			{
+				if(drawLayer!=null) drawLayer.clear();
+				clearSelectionFilter();
+				defaultImage.filters = [glowFilter];
+			}
+			
+			private var selectedDrawingIcon:Image;
+			private function clearSelectionFilter():void
+			{
+				for (var i:int = 0; i < drawContainer.numChildren; i++)
+				{
+					if (drawContainer.getChildAt(i).filters && drawContainer.getChildAt(i).filters.length > 0)
+					{
+						if (!(selectedDrawingIcon && drawContainer.getChildAt(i) === selectedDrawingIcon))
+						{
+							drawContainer.getChildAt(i).filters = [];
+						}
+					}
+				}
+			}
+			
+			private function map_drawEndHandler(event:DrawEvent):void
+			{
+				drawLayer.clear();
+				drawLayer.add(event.graphic);
+				this.drawTool.deactivate();
+			}
+			
+			
 		]]>
 	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glowFilter"
+					  alpha="1"
+					  color="{getStyle('focusColor')}"
+					  inner="false"
+					  strength="5"/>
+		<esri:DrawTool id="drawTool" drawEnd="map_drawEndHandler(event)" map="{map}" snapMode="alwaysOn" snapOption="edgeAndVertex"/> 
+	</fx:Declarations>
+	<mx:VBox  width="100%" paddingBottom="10" paddingLeft="10" paddingTop="15" paddingRight="10" horizontalGap="5" verticalGap="10" verticalAlign="top" horizontalAlign="center">
+		<mx:HBox width="100%" verticalAlign="middle">
+			<mx:Label text="统计图层" width="66"/>
+			<mx:ComboBox width="100%" id="layerComb" dataProvider="{staticlayerlist}" labelField="@name"/>
+		</mx:HBox>
+		<mx:HBox width="100%" verticalAlign="middle">
+			<mx:Label text="分类字段" width="66"/>
+			<mx:ComboBox width="100%" id="typeComb" dataProvider="{classfieldlist}" labelField="@label"/>
+		</mx:HBox>
+		<mx:HBox width="100%" verticalAlign="middle">
+			<mx:Label text="统计字段" width="66"/>
+			<mx:ComboBox width="100%" id="statComb" dataProvider="{statfieldlist}" labelField="@label"/>
+		</mx:HBox>
+		
+		<mx:Label text="统计范围" width="100%"/>
+		<mx:HBox id="drawContainer" borderStyle="solid"  width="100%" height="100" horizontalAlign="center" verticalAlign="middle" horizontalGap="5">
+			<mx:Image id="defaultImage" source="assets/images/i_all.png" useHandCursor="true" buttonMode="true" toolTip="默认全部" name="all" click="activateDrawTool(event)" width="40" height="40" filters="{[glowFilter]}"/>
+			<mx:Image  source="assets/images/i_draw_rect.png" useHandCursor="true" buttonMode="true" toolTip="画矩形" name="{DrawTool.EXTENT}" click="activateDrawTool(event)" width="40" height="40"/>
+			<mx:Image  source="assets/images/i_draw_circle.png" useHandCursor="true" buttonMode="true" toolTip="画圆" name="{DrawTool.CIRCLE}" click="activateDrawTool(event)" width="40"
+					   height="40"/>
+			<mx:Image  source="assets/images/i_draw_poly.png" useHandCursor="true" buttonMode="true" toolTip="画多边形" name="{DrawTool.POLYGON}" click="activateDrawTool(event)" width="40"
+					   height="40"/>
+			<mx:Image source="assets/images/i_draw_freepoly.png" useHandCursor="true" buttonMode="true" toolTip="画随意图形" name="{DrawTool.FREEHAND_POLYGON}" click="activateDrawTool(event)"
+					  width="40" height="40"/>
+			<mx:Image  source="assets/images/i_clear.png" useHandCursor="true" buttonMode="true" toolTip="清除" name="Clear" click="activateDrawTool(event)" width="40" height="40"/>
+		</mx:HBox>
+		<mx:HBox width="100%"  horizontalAlign="right">
+			<mx:Button label="查询统计" click="statistic()"/>
+		</mx:HBox>
+	</mx:VBox>
 </framework:BaseWidget>

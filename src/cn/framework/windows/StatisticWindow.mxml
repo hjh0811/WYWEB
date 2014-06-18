@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"  title="统计结果"
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" layout="absolute" width="1024" height="600" showCloseButton="true" close="PopUpManager.removePopUp(this);" xmlns:charts="cn.framework.utils.charts.*" xmlns:amcharts="http://www.amcharts.com/com_internal">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			[Bindable]
+			private var _array:Array;
+			
+			public function set array(value:Array):void
+			{
+				_array= value;
+				this.currentState = "pieChartState";
+				datagrid.dataProvider = _array;
+				picChart.dataProvider =  _array;
+			}
+			
+			protected function chartTypeChange(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var radio:RadioButton = event.currentTarget as RadioButton;
+				if(radio.label=="饼状图")
+				{
+					this.currentState = "pieChartState";
+					picChart.dataProvider =  _array;
+				}
+				else if(radio.label=="柱状图")
+				{
+					this.currentState = "columnChartState";
+					columnChart.dataProvider =  _array;
+					amgraph.setStyle("fillAlphas",[0.8]);
+					amgraph.setStyle("lineAlpha",0);
+					amgraph.setStyle("bullet","none");
+					amgraph.type = "column";
+					
+				}
+				else if(radio.label=="线状图")
+				{
+					this.currentState = "columnChartState";
+					columnChart.dataProvider =  _array;
+					amgraph.setStyle("fillAlphas",[0]);
+					amgraph.setStyle("lineAlpha",1);
+					amgraph.setStyle("bullet","round");
+					amgraph.type = "line";
+					
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<mx:states>
+		<s:State name="pieChartState"/>
+		<s:State name="columnChartState"/>
+	</mx:states>
+	<s:HGroup width="100%" height="100%" verticalAlign="middle">
+		<mx:DataGrid id="datagrid" width="100%" height="100%" dataProvider="{_array}" paddingBottom="5" paddingTop="5" paddingLeft="5" paddingRight="5">
+			<mx:columns>
+				<mx:DataGridColumn headerText="分类" dataField="name"/>
+				<mx:DataGridColumn headerText="合计" dataField="zs">
+					
+				</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+		<!--<mx:PieChart id="columnchart" dataProvider="{_array}" showDataTips="true" >
+		<mx:series>
+		<mx:PieSeries displayName="统计图" field="uid" nameField="nqzt" labelPosition="callout" labelField="nqzt"/>
+		</mx:series>
+		</mx:PieChart>-->
+		<s:Group  width="100%" height="100%" >
+			<charts:PieChart  top="10" visible.columnChartState="false" visible.pieChartState="true" width="100%"  height="100%" dataProvider="{_array}" gradient="radial"
+							  innerRadius="25" startDuration="1" id="picChart" depth3D="20" angle="35" titleField="name" valueField="zs">
+				<charts:balloon>
+					<amcharts:AmBalloon cornerRadius="10" borderThickness="2" borderColor="#FFFFFF" borderAlpha="1"/>                
+				</charts:balloon>
+			</charts:PieChart>
+			<charts:ColumnChart id="columnChart" top="10"  startDuration="1"  angle="30" width="100%"  height="100%" categoryField="name"    dataProvider="{_array}" depth3D="30" visible.columnChartState="true" visible.pieChartState="false" >
+				<charts:graphs>
+					<amcharts:AmGraph id="amgraph" itemColors="[#CC0000,#FEC514,#ADD981,#DB4C3C]" balloonText="[[category]]: [[zs]]" lineAlpha="0" valueField="zs" type="column" lineThickness="2"  fillAlphas="[0.8]" markerType="line"/>                        
+				</charts:graphs>
+				<charts:balloon>
+					<amcharts:AmBalloon cornerRadius="5" borderThickness="2" borderColor="#FFFFFF" borderAlpha="1"/>                
+				</charts:balloon>    
+			</charts:ColumnChart>
+			<s:HGroup width="100%">
+				<s:RadioButton label="饼状图" click="chartTypeChange(event)" groupName="chartRadio" selected="true"/>
+				<s:RadioButton label="柱状图" click="chartTypeChange(event)" groupName="chartRadio"/>
+				<s:RadioButton label="线状图" click="chartTypeChange(event)" groupName="chartRadio"/>
+			</s:HGroup>
+		</s:Group>
+	</s:HGroup>
+</mx:TitleWindow>

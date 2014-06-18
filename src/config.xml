@@ -10,18 +10,14 @@
 	    <layer id="yx" url="http://218.15.41.59:8719/wmts/sg_gz_image_map/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
 	    <layer id="zj" url="http://218.15.41.59:8719/wmts/sg_gz_image_zj/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
 
-	    <layer id="csztgh" name="城市总体规划" url="http://218.15.41.59:8719/wmts/rh_cjgh_qp2000/Default/epsg:4490/" showtype="check" type="wmts" visible="false" dynamic="true"></layer>
-	    <layer id="tdlyxz" name="土地利用现状" url="http://218.15.41.59:8719/wmts/rh_csztgh_qp2000/Default/epsg:4490/" showtype="check" type="wmts" visible="false" dynamic="true"></layer>
-	    <layer id="tdlyztgh" name="土地总体规划" url="http://218.15.41.59:8719/wmts/rh_tdlyztgh_qp2000/Default/epsg:4490/" showtype="check" type="wmts" visible="false" dynamic="true"></layer> 
-	    <layer id="ddzh" name="地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="false"></layer>
-	    
+	    <layer id="ddzh" name="地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="true"></layer>
 	    <layer id="dz" name="地质灾害地裂缝" url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=sg_dzzh_dlf&request=Query" showtype="check" type="feature" visible="false" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"/>
     </layers>
 	    
 	<querylayers>
 	    <!-- 政务外网 -->
 	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000&request=Query">
+	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000">
 	        <queryfield displayname="名称" name="NAME"></queryfield>
 	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
 	    </querylayer>
@@ -33,26 +29,27 @@
 	</querylayers>
 	
 	<statistic>
-	    <staticlayer name="仁化土地利用现状" classfield="DLMC" classfieldAlias="地类名称" sumfield="TBMJ" sumfieldAlias="面积(平方米)"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=dltb2000&request=SpatialQuery&MAXFEATURES=500&RETTYPE=2"/>
-	    <staticlayer name="仁化土地利用总体规划" classfield="DLBM"  classfieldAlias="地类编码"   sumfield="DLMJ" sumfieldAlias="面积(平方米)"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=qmdltb2000&request=SpatialQuery&MAXFEATURES=500&RETTYPE=2"/>
+	     <staticlayer name="地质灾害地裂缝"
+	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=sg_dzzh_dlf">
+	        <!-- 分类字段 -->
+	        <classfield label="灾害点名称" name="灾害点名称"/>
+	         <!-- 统计字段，其中COUNT为系统的数量统计 -->
+	        <sumfield label="数量" name="COUNT"/>
+	    </staticlayer>
+	    <staticlayer name="建设工程规划许可"
+	        url="http://127.0.0.1:8719/NewMapServer/WebServices/FeatureServer.php?layer=JSGCGHXK">
+	        <classfield label="项目名称" name="XMMC"/>
+	        <classfield label="建设单位" name="JSDW"/>
+	        <sumfield label="数量" name="COUNT"/>
+	    </staticlayer>
+	    <staticlayer name="已报批地块"
+	        url="http://127.0.0.1:8719/NewMapServer/WebServices/FeatureServer.php?layer=JSGCGHXK">
+	        <classfield label="名称" name="XMMC"/>
+	        <classfield label="地址" name="JSDW"/>
+	        <sumfield label="数量" name="COUNT"/>
+	    </staticlayer>
 	</statistic>
 	
-	<analyse>
-	    <analyseLayer name="仁化土地利用规划" classfield="DLMC"  classfieldAlias="地类名称"   sumfield="TBMJ" sumfieldAlias="面积(平方米)"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=dltb2000&request=SpatialQuery&MAXFEATURES=100&RETTYPE=2"></analyseLayer>
-	    <analyseLayer name="仁化城建规划" classfield="土地使用性质"  classfieldAlias="土地使用性质"   sumfield="用地面积" sumfieldAlias="面积(平方米)"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=PLOTRGN2000&request=SpatialQuery&MAXFEATURES=100&RETTYPE=2"></analyseLayer>
-	</analyse>
-	
-	<!-- 数据检查 -->
-    <check>
-	    <checkLayer name="仁化土地利用现状" classfield="DLMC"  classfieldAlias="地类名称"   sumfield="TBMJ" sumfieldAlias="面积(平方米)"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=dltb2000&request=SpatialQuery&MAXFEATURES=100&RETTYPE=3"></checkLayer>
-	    <checkLayer name="仁化城建规划" classfield="土地使用性质"  classfieldAlias="土地使用性质"   sumfield="用地面积" sumfieldAlias="面积(平方米)"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=PLOTRGN2000&request=SpatialQuery&MAXFEATURES=100&RETTYPE=3"></checkLayer>
-	</check>
 	<json>
 	</json>
 </configuration>

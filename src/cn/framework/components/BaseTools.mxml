@@ -304,14 +304,6 @@
 			<s:Image  source="assets/images/xzt.png" click="clickHandler(event,3)"/>
 			<s:Image  source="assets/images/sw.png" click="clickHandler(event,5)"/>-->
 		</s:HGroup>
-		<!--<s:HGroup verticalAlign="middle" width="100%">
-			<s:Label  text="地质灾害" width="100%" />
-			<s:ToggleButton styleName="layerswicth" width="42" height="25"/>
-		</s:HGroup>
-		<s:HGroup verticalAlign="middle" width="100%">
-			<s:Label text="地质灾害" width="100%" />
-			<s:ToggleButton styleName="layerswicth" width="42" height="25"/>
-		</s:HGroup>-->
 		</s:BorderContainer>
 	</s:VGroup>
 </s:Group>

@@ -457,7 +457,7 @@
 							//                            updateMeasureLabelPosition(geom);
 							//                            measureGeometry(geom);
 							//                        }
-							Alert.show(JSONUtil.encode(geom).toString());
+//							Alert.show(JSONUtil.encode(geom).toString());
 							break;
 						}
 						case Geometry.POLYGON:

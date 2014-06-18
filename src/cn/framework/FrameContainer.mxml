@@ -291,7 +291,7 @@
 					leftContent.visible = true;
 					leftContent.includeInLayout = true;
 					loadModule("cn/framework/widgets/QueryWidget.swf");
-					
+					panel.title = "信息查询";
 					clearGraphics();
 				}
 				else if(index == 2) 
@@ -300,6 +300,8 @@
 					leftContent.visible = true;
 					leftContent.includeInLayout = true;
 					loadModule("cn/framework/widgets/StatisticWidget.swf");
+					panel.title = "信息统计";
+
 				}
 				else if(index == 3)
 				{
@@ -307,6 +309,8 @@
 					leftContent.visible = true;
 					leftContent.includeInLayout = true;
 					loadModule("cn/framework/widgets/DrawWidget.swf");
+					panel.title = "地图标注";
+
 				}
 				else if(index == 4)
 				{
@@ -317,13 +321,13 @@
 						loadManagerConsole();
 					}
 				}
-				else if(index == 5)
-				{
-					viewStack.selectedIndex = 0;
-					leftContent.visible = true;
-					leftContent.includeInLayout = true;
-					loadModule("cn/framework/widgets/RouteWidget.swf");
-				}
+//				else if(index == 5)
+//				{
+//					viewStack.selectedIndex = 0;
+//					leftContent.visible = true;
+//					leftContent.includeInLayout = true;
+//					loadModule("cn/framework/widgets/RouteWidget.swf");
+//				}
 				else
 					return;
 			}
@@ -501,6 +505,7 @@
 					this.passWord.setFocus();
 				}
 			}
+			
 		]]>
 	</fx:Script>
 	
@@ -559,7 +564,22 @@
 											   >
 						</Navigation:Navigation>
 						<components:BaseTools id="baseTool" right="10" top="10" toolTip="切换地图"/>
-						<components:OverviewMapComponent id="overviewMap" right="5" bottom="5" currentState=""/>
+						<components:OverviewMapComponent id="overviewMap" right="5" bottom="43" currentState=""/>
+						
+						<s:BorderContainer borderVisible="false" fontSize="11" width="100%" bottom="1" left="1" right="1">
+							<s:backgroundFill> 
+								<s:SolidColor 
+									color="0x94BEE4" 
+									alpha="0.5"/> 
+							</s:backgroundFill> 
+							<s:HGroup verticalAlign="bottom" width="100%" paddingBottom="3" paddingLeft="3" paddingRight="3" paddingTop="3">
+								<s:Label text="地图服务支持:韶关市国土资源局 " />
+								<s:VGroup width="100%" horizontalAlign="right">
+									<s:Label text="审图号:粤S(2011)018号、粤S(2011)090号"/>
+									<s:Label text="技术支持:广东省国土资源测绘院  韶关市国土资源信息中心 "/>
+								</s:VGroup>
+							</s:HGroup>
+						</s:BorderContainer>
 						<!--展开/隐藏-->
 						<mx:VBox height="100%" left="0" width="10"  horizontalGap="0" verticalAlign="middle">
 							<mx:Image id="img"  source="assets/main/push.png" buttonMode="true" useHandCursor="true" click="expand(event)"/>

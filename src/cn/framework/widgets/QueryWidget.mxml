@@ -27,6 +27,7 @@
 			import com.esri.ags.Map;
 			import com.esri.ags.events.DrawEvent;
 			import com.esri.ags.events.TimeExtentEvent;
+			import com.esri.ags.geometry.Extent;
 			import com.esri.ags.geometry.Geometry;
 			import com.esri.ags.geometry.MapPoint;
 			import com.esri.ags.geometry.Polygon;
@@ -99,7 +100,7 @@
 				var fieldXML:XML = this.layerFieldComb.selectedItem as XML;
 				var queryField:String = fieldXML.@name;
 				var httpservice:HTTPService = new HTTPService;
-				pageWhereURL = layerXML.@url  + encodeURI("&where=" + queryField + " like '%"+queryText.text+"%'");
+				pageWhereURL = layerXML.@url  + "&request=Query" + encodeURI("&where=" + queryField + " like '%"+queryText.text+"%'");
 				httpservice.url =pageWhereURL + "&MAXFEATURES=" + pageSize + "&page=1";
 				httpservice.method = "GET";
 				httpservice.resultFormat = "text";
@@ -272,7 +273,7 @@
 				{
 					var obj:Object = this.layerComb.selectedItem as Object;
 					var httpservice:HTTPService = new HTTPService;
-					httpservice.url =pageWhereURL + "&page=" + (pageIndex +1);
+					httpservice.url =pageWhereURL + "&page=" + (pageIndex +1) + "&MAXFEATURES=" + pageSize;
 					httpservice.method = "GET";
 					httpservice.resultFormat = "text";
 					httpservice.addEventListener(ResultEvent.RESULT,pageNewMapResultHandler);
@@ -421,6 +422,48 @@
 				drawLayer.clear();
 				drawLayer.add(event.graphic);
 				this.drawTool.deactivate();
+				
+				var extentStr:String="";
+				if(event.graphic.geometry is Polygon)
+				{
+						var polygon:Polygon = event.graphic.geometry as Polygon;
+						var array:Array = polygon.rings[0];
+						var fisrt:Boolean =true;
+						for each(var point:MapPoint in array)
+						{
+							if(fisrt)
+							{
+								fisrt=false;
+								extentStr="&polygon="+point.x +","+point.y;
+							}
+							else
+							{
+								extentStr=extentStr+ ","+ point.x +","+point.y;
+							}
+						}
+				}
+				else if(event.graphic.geometry is Extent)
+				{
+					var extent:Extent = event.graphic.geometry as Extent;
+					extentStr="&bbox=" +extent.xmin+"," + extent.ymin+"," + extent.xmax+"," + extent.ymax;
+				}
+				var httpservice:HTTPService = new HTTPService;
+				pageWhereURL = this.layerComb.selectedItem.@url  + "&request=SpatialQuery"  + extentStr;
+				httpservice.url = pageWhereURL + "&page=1&MAXFEATURES=" + pageSize;
+				httpservice.resultFormat ="text";
+				httpservice.method ="GET";
+				httpservice.addEventListener(ResultEvent.RESULT,pageNewMapResultHandler);
+				httpservice.send();
+				
+				var countHttpservice:HTTPService = new HTTPService;
+				countHttpservice.url = pageWhereURL + "&MAXFEATURES=1&page=1&RETTYPE=2";
+				countHttpservice.method = "GET";
+				countHttpservice.resultFormat = "text";
+				countHttpservice.addEventListener(ResultEvent.RESULT,countResultHandler);
+				countHttpservice.send(null);
+				
+				CursorManager.setBusyCursor();
+				
 			}
 			
 			private function clear():void
@@ -469,7 +512,7 @@
 				<mx:Label text="图  层:" width="60"/><mx:ComboBox id="layerComb" labelField="@displayname" width="100%" height="25" dataProvider="{queryLayerList}" change="layerComb_changeHandler(event)"/>
 			</mx:HBox>
 			<mx:TabNavigator width="100%" height="160">
-			<mx:VBox width="100%" height="100%" label="属性查询">
+			<mx:VBox width="100%" height="100%" label="属性查询" verticalGap="10">
 				<mx:HBox verticalAlign="middle"  width="100%"  paddingLeft="10" paddingRight="10" paddingTop="15">
 					<mx:Label text="字  段:" width="60"/><mx:ComboBox id="layerFieldComb" labelField="@displayname" width="100%" height="25" dataProvider="{queryLayerFieldList}"/>
 				</mx:HBox>
