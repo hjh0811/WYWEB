@@ -470,6 +470,11 @@
 			{
 				graphicsLayer.clear();
 				if(drawLayer!=null) drawLayer.clear();
+				this.recAC = null;
+				renfangRepeater.dataProvider = null;
+				this.pageBar.visible = false;
+				this.zsNum = "";
+				
 			}
 		]]>
 	</fx:Script>
@@ -533,7 +538,7 @@
 								   height="40"/>
 						<mx:Image source="assets/images/i_draw_freepoly.png" useHandCursor="true" buttonMode="true" toolTip="画随意图形" name="{DrawTool.FREEHAND_POLYGON}" click="activateDrawTool(event)"
 								  width="40" height="40"/>
-						<mx:Image  source="assets/images/i_clear.png" useHandCursor="true" buttonMode="true" toolTip="清除" name="clear" click="activateDrawTool(event)" width="40" height="40"/>
+						<mx:Image  source="assets/images/i_clear.png" useHandCursor="true" buttonMode="true" toolTip="清除" name="Clear" click="activateDrawTool(event)" width="40" height="40"/>
 					</mx:HBox>
 			</mx:VBox>
 		</mx:TabNavigator>	

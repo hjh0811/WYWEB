@@ -13,6 +13,7 @@
 			import cn.framework.utils.WMTSLayer;
 			import cn.framework.widgets.LoginPop;
 			import cn.framework.widgets.Navigation.NavToolItem;
+			import cn.framework.windows.ExportWindow;
 			
 			import com.esri.ags.Map;
 			import com.esri.ags.SpatialReference;
@@ -34,11 +35,13 @@
 			import mx.events.FlexEvent;
 			import mx.events.ItemClickEvent;
 			import mx.events.ModuleEvent;
+			import mx.managers.CursorManager;
 			import mx.managers.PopUpManager;
 			import mx.modules.IModuleInfo;
 			import mx.modules.ModuleManager;
 			import mx.rpc.events.ResultEvent;
 			import mx.rpc.http.HTTPService;
+			import mx.validators.Validator;
 			
 			import spark.core.IDisplayText;
 			
@@ -229,6 +232,7 @@
 				navtool.initButtonBar();
 				
 				this.overviewMap.map = this.map;
+				toolbar.map = this.map;
 			}
 			
 			private var widgetTable:Hashtable = new Hashtable();
@@ -275,7 +279,7 @@
 			{
 				
 				// TODO Auto-generated method stub
-//				ToggleButton1.selected =false;
+				ToggleButton1.selected =false;
 				ToggleButton2.selected =false;
 				ToggleButton3.selected =false;
 				ToggleButton4.selected = false;
@@ -321,13 +325,20 @@
 						loadManagerConsole();
 					}
 				}
-//				else if(index == 5)
-//				{
-//					viewStack.selectedIndex = 0;
-//					leftContent.visible = true;
-//					leftContent.includeInLayout = true;
-//					loadModule("cn/framework/widgets/RouteWidget.swf");
-//				}
+				else if(index == 5)
+				{
+					viewStack.selectedIndex = 0;
+					
+					var exportWindow:ExportWindow=ExportWindow(PopUpManager.createPopUp(this.parentApplication.parent, ExportWindow, true));
+					exportWindow.map=this.map;
+					PopUpManager.centerPopUp(exportWindow);
+					
+					var rotate:Rotate3D = new Rotate3D;;
+					rotate.angleXFrom = -90;
+					rotate.angleXTo = 0;
+					rotate.duration = 1000;
+					rotate.play([exportWindow]);
+				}
 				else
 					return;
 			}
@@ -432,24 +443,28 @@
 			
 			private function login():void
 			{
-				
-//				var validatorArray:Array = new Array;
-//				validatorArray.push(userValid);
-//				validatorArray.push(pwValid);
-//				var array:Array = Validator.validateAll(validatorArray);
-//				if(array.length > 0)
-//				{
-//					return;
-//				}
-				
-				this.loginPage.visible = false;
-				loginSuccess=true;
-				if(userName.text.indexOf("admin")>-1)
+				var validatorArray:Array = new Array;
+				validatorArray.push(userValid);
+				validatorArray.push(pwValid);
+				var array:Array = Validator.validateAll(validatorArray);
+				if(array.length > 0)
 				{
-					loginSuccess=true;
+					return;
 				}
-//				var params:Object = {t:"SYS_LOG_01",u:userName.text, p:passWord.text};
-//				//				FrameContainer.getInstance().serviceManager.getDataByService(params,loginHandler,"POST");
+				
+				CursorManager.setBusyCursor();
+				this.userName.enabled = false;
+				this.passWord.enabled = false;
+				this.loginButton.enabled = false;
+				
+//				this.loginPage.visible = false;
+//				loginSuccess=true;
+//				if(userName.text.indexOf("admin")>-1)
+//				{
+//					loginSuccess=true;
+//				}
+				var params:Object = {t:"SYS_LOG_01",u:userName.text, p:passWord.text};
+				FrameContainer.getInstance().serviceManager.getDataByService(params,loginHandler,"POST");
 //				var httpservice:HTTPService = new HTTPService;
 //				httpservice.url = this.servletcontext +"servlet/dataexchange";
 //				httpservice.resultFormat = "text";
@@ -460,6 +475,7 @@
 			
 			private function loginHandler(event:ResultEvent):void
 			{
+				CursorManager.removeBusyCursor();
 				if(event.result==null || event.result=="") return; 
 				var jsonObject:Object = JSON.parse(event.result.toString()) as Object; 
 				if(jsonObject==null) return; 	
@@ -479,11 +495,17 @@
 					else
 					{
 						Alert.show("用户名或密码不正确!","提示");
+						this.userName.enabled = true;
+						this.passWord.enabled = true;
+						this.loginButton.enabled = true;
 					}
 				}
 				else
 				{
 					Alert.show("登陆失败！");
+					this.userName.enabled = true;
+					this.passWord.enabled = true;
+					this.loginButton.enabled = true;
 				}
 			}
 			
@@ -511,6 +533,8 @@
 	
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:StringValidator id="userValid" required="true" requiredFieldError="请输入用户名" source="{userName}" property="text"/>
+		<mx:StringValidator id="pwValid" required="true" requiredFieldError="请输入密码" source="{passWord}" property="text"/>
 		<s:Rotate3D id="rotateEffect" target="{leftContent}"  
 					angleXFrom="0.0" angleXTo="0" 
 					angleYFrom="0.0" angleYTo="-360" 
@@ -523,7 +547,7 @@
 				  xFrom="0" xBy="-300" 
 				  yFrom="0" yBy="0" 
 				  zFrom="0" zBy="0"
-				  duration="500"
+				  duration="500" 
 				  repeatCount="1"
 				  effectStart="this.leftContent.alpha=.7" effectEnd="rotateEffect_effectEndHandler(event)"/>
 	</fx:Declarations>
@@ -535,11 +559,13 @@
 			</mx:HBox>
 			<s:HGroup top="0" right="8" gap="5">
 				<s:Image source="assets/main/top_right_yline.png"/>
-				<s:ToggleButton id="ToggleButton2" click="menuclickHandler(event,1)" width="66" height="75" styleName="rfgcButton" selected="true" useHandCursor="true" buttonMode="true"/>
+				<s:ToggleButton id="ToggleButton2" click="menuclickHandler(event,1)" width="66" height="75" styleName="xxcxButton" selected="true" useHandCursor="true" buttonMode="true"/>
 				<s:Image source="assets/main/top_right_yline.png"/>
 				<s:ToggleButton id="ToggleButton3" click="menuclickHandler(event,2)" width="66" height="75" styleName="sjtjButton" useHandCursor="true" buttonMode="true"/>
 				<s:Image source="assets/main/top_right_yline.png"/>
 				<s:ToggleButton  id="ToggleButton4" click="menuclickHandler(event,3)" width="66" height="75" styleName="dtscButton" useHandCursor="true" buttonMode="true"/>
+				<s:Image source="assets/main/top_right_yline.png"/>
+				<s:ToggleButton  id="ToggleButton1" click="menuclickHandler(event,5)" width="66" height="75" styleName="zbcxButton" useHandCursor="true" buttonMode="true"/>
 				<s:Image source="assets/main/top_right_yline.png" visible="{loginSuccess}"  includeInLayout="{loginSuccess}"/>
 				<s:ToggleButton visible="{loginSuccess}" includeInLayout="{loginSuccess}" id="ToggleButton5" width="66" height="75" styleName="htglButton" click="menuclickHandler(event,4)" useHandCursor="true" buttonMode="true"/>
 			</s:HGroup>
@@ -558,7 +584,7 @@
 					<mx:Canvas width="100%" height="100%">
 
 						<s:Group top="10" left="90">
-							<components:Toolbar map="{map}"/>
+							<components:Toolbar id="toolbar"/>
 						</s:Group>
 						<Navigation:Navigation left="10" top="10" id="navtool"
 											   >
@@ -607,7 +633,7 @@
 					<s:TextInput id="passWord" displayAsPassword="true" keyDown="keyFocusChangeHandler(event)"/>
 				</s:HGroup>
 				<s:HGroup>
-					<mx:Button label="登陆" click="login()"/>
+					<mx:Button id="loginButton" label="登陆" click="login()"/>
 				</s:HGroup>
 			</s:VGroup>
 		</s:Group>

@@ -35,13 +35,13 @@ mx|ToolTip
 	selectedIcon: Embed(source="assets/main/top_zbcx_h.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
-.rfgcButton {
+.xxcxButton {
 	color:#FFFFFF;
-	icon: Embed(source="assets/main/top_rfgc.png");
-	downIcon: Embed(source="assets/main/top_rfgc_h.png");
-	overIcon: Embed(source="assets/main/top_rfgc.png");
-	disableIcon: Embed(source="assets/main/top_rfgc.png");
-	selectedIcon: Embed(source="assets/main/top_rfgc_h.png");
+	icon: Embed(source="assets/main/top_xxcx.png");
+	downIcon: Embed(source="assets/main/top_xxcx_h.png");
+	overIcon: Embed(source="assets/main/top_xxcx.png");
+	disableIcon: Embed(source="assets/main/top_xxcx.png");
+	selectedIcon: Embed(source="assets/main/top_xxcx_h.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
 .sjtjButton {
@@ -135,6 +135,7 @@ mx|ToolTip
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
 
+/*
 .dy {
 	color:#FFFFFF;
 	icon: Embed(source="assets/main/tool_print.png");
@@ -145,6 +146,8 @@ mx|ToolTip
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
 
+
+
 .fp {
 	color:#FFFFFF;
 	icon: Embed(source="assets/main/tool_change.png");
@@ -153,7 +156,7 @@ mx|ToolTip
 	disableIcon: Embed(source="assets/main/tool_change.png");
 	selectedIcon: Embed(source="assets/main/tool_change_h.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
-}
+}*/
 
 .qp {
 	color:#FFFFFF;
@@ -164,6 +167,8 @@ mx|ToolTip
 	selectedIcon: Embed(source="assets/main/tool_retunefull_h.png");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
 }
+
+/*
 .cxbutton {
 	color:#FFFFFF;
 	icon: Embed(source="assets/main/btn_search_h.jpg");
@@ -172,7 +177,7 @@ mx|ToolTip
 	disableIcon: Embed(source="assets/main/btn_search.jpg");
 	selectedIcon: Embed(source="assets/main/btn_search.jpg");
 	skinClass: ClassReference("cn.framework.skin.MainSelectButtonSkin");
-}
+}*/
 
 .layerswicth
 {

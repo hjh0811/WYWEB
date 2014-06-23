@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx"  height="39" width="306" xmlns:esri="http://www.esri.com/2008/ags">
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  height="39" width="272" xmlns:esri="http://www.esri.com/2008/ags">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
-		<esri:GeometryService id="geometryService"
+		<!--<esri:GeometryService id="geometryService"
 							  concurrency="last"
 							  lengthsComplete="lengthsCompleteHandler(event)"
 							  areasAndLengthsComplete="geometryService_areasAndLengthsCompleteHandler(event)"
 							  showBusyCursor="true" 
-							  url="{geometryServices}"/>
+							  url="{geometryServices}"/>-->
 		<esri:NavigationTool id="nav" map="{this.map}"/>
-		<esri:DrawTool id="drawbar"
-					   map="{this.map}" drawEnd="drawEndHandler(event)" />
+		<esri:DrawTool id="drawbar" snapMode="alwaysOn" snapOption="edgeAndVertex"
+					   map="{this.map}" drawEnd="drawEndHandler(event)" graphicsLayer="{this.graphicsLayer}" drawStart="drawbar_drawStartHandler(event)" />
 		
-		<esri:InfoSymbol id="myInfoSymbol">
+		<!--<esri:InfoSymbol id="myInfoSymbol">
 			<esri:infoRenderer>
 				<fx:Component>
 					<s:DataRenderer>
@@ -39,9 +39,9 @@
 					</s:DataRenderer>
 				</fx:Component>
 			</esri:infoRenderer>
-		</esri:InfoSymbol>
+		</esri:InfoSymbol>-->
 		
-		<esri:SimpleLineSymbol id="lineSymbol"
+		<!--<esri:SimpleLineSymbol id="lineSymbol"
 							   width="4"
 							   color="#6E6F00"/>
 		<mx:NumberFormatter id="myNumberFormatter"
@@ -49,7 +49,13 @@
 							useThousandsSeparator="true"/>
 		<esri:SimpleFillSymbol id="mySFS" color="0xAA0000" alpha="0.5">
 			<esri:SimpleLineSymbol width="2" color="0xAA0000"/>
+		</esri:SimpleFillSymbol>-->
+		<esri:SimpleFillSymbol id="mySFS" color="0x000000" alpha="0">
+			<esri:SimpleLineSymbol width="2" color="0x000000"/>
 		</esri:SimpleFillSymbol>
+		<mx:NumberFormatter id="numFormatter"
+							precision="2" rounding="nearest"
+							useThousandsSeparator="false"/>
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
@@ -62,16 +68,20 @@
 			import com.esri.ags.Units;
 			import com.esri.ags.events.DrawEvent;
 			import com.esri.ags.events.GeometryServiceEvent;
+			import com.esri.ags.geometry.Extent;
 			import com.esri.ags.geometry.Geometry;
 			import com.esri.ags.geometry.MapPoint;
 			import com.esri.ags.geometry.Polygon;
 			import com.esri.ags.geometry.Polyline;
 			import com.esri.ags.layers.GraphicsLayer;
 			import com.esri.ags.layers.Layer;
+			import com.esri.ags.symbols.TextSymbol;
 			import com.esri.ags.tools.DrawTool;
 			import com.esri.ags.tools.NavigationTool;
 			import com.esri.ags.utils.GeometryUtil;
 			import com.esri.ags.utils.JSONUtil;
+			
+			import flash.text.engine.FontWeight;
 			
 			import mx.controls.Alert;
 			import mx.effects.Move;
@@ -82,8 +92,8 @@
 			import spark.effects.Rotate3D;
 			
 			private var exportWindow:ExportWindow;
-			[Bindable]
-			private var geometryServices:String = "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer";
+//			[Bindable]
+//			private var geometryServices:String = "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer";
 			
 			
 			[Embed(source="assets/cursors/MoveZoomIn.png")]
@@ -96,12 +106,21 @@
 			private var areaCursor:Class;
 			
 			[Bindable]
+			private var graphicsLayer:GraphicsLayer;
+			[Bindable]
+			private var measureGraphicsLayer:GraphicsLayer;
+			
+			[Bindable]
 			private var _map:Map;
 			
 			[Bindable]
 			public function set map(value:Map):void
 			{
 				this._map = value;
+				graphicsLayer= this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+				measureGraphicsLayer = new GraphicsLayer();
+				measureGraphicsLayer.name = "Draw Measurement Features";
+				map.addLayer(measureGraphicsLayer);
 			}
 			
 			public function get map():Map
@@ -117,15 +136,18 @@
 				bt4.selected =false;
 				bt5.selected =false;
 				bt6.selected =false;
-				bt7.selected =false;
+//				bt7.selected =false;
 //				bt8.selected =false;
 				bt9.selected =false;
 				var button:ToggleButton = event.currentTarget as ToggleButton;
 				button.selected =true;
 				map.cursorManager.removeAllCursors();
 				nav.deactivate();
-				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+//				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
 				drawbar.deactivate();
+				
+				map.removeEventListener(MouseEvent.MOUSE_MOVE,measureMove);
+				map.removeEventListener(MouseEvent.CLICK,measureClick);
 				var move:Move=new Move;
 				switch (index)
 				{
@@ -176,15 +198,19 @@
 					}
 					case 10:
 					{
-						redLingGraphicsLayer.clear();
+//						redLingGraphicsLayer.clear();
 						drawbar.activate(DrawTool.POLYLINE);
+						drawType = DrawTool.POLYLINE;
+						map.addEventListener(MouseEvent.CLICK,measureClick);
 						map.cursorManager.setCursor(lengthCursor,index,-6,-17);
 						break;
 					}
 					case 11:
 					{
-						redLingGraphicsLayer.clear();
+//						redLingGraphicsLayer.clear();
 						drawbar.activate(DrawTool.POLYGON);
+						drawType = DrawTool.POLYGON;
+						map.addEventListener(MouseEvent.CLICK,measureClick);
 						map.cursorManager.setCursor(areaCursor,index,-6,-17);
 						break;
 					}
@@ -204,19 +230,19 @@
 					}
 					case 14:
 					{
-						exportWindow=ExportWindow(PopUpManager.createPopUp(this.parentApplication.parent, ExportWindow, true));
-						exportWindow.map=this.map;
-						PopUpManager.centerPopUp(exportWindow);
-						
-						var rotate:Rotate3D = new Rotate3D;;
-//						rotate.angleZFrom = 90;
-//						rotate.angleZTo= 0;
-//						rotate.angleYFrom = 60;
-//						rotate.angleYTo = 0;
-						rotate.angleXFrom = -90;
-						rotate.angleXTo = 0;
-						rotate.duration = 1000;
-						rotate.play([exportWindow]);
+//						exportWindow=ExportWindow(PopUpManager.createPopUp(this.parentApplication.parent, ExportWindow, true));
+//						exportWindow.map=this.map;
+//						PopUpManager.centerPopUp(exportWindow);
+//						
+//						var rotate:Rotate3D = new Rotate3D;;
+////						rotate.angleZFrom = 90;
+////						rotate.angleZTo= 0;
+////						rotate.angleYFrom = 60;
+////						rotate.angleYTo = 0;
+//						rotate.angleXFrom = -90;
+//						rotate.angleXTo = 0;
+//						rotate.duration = 1000;
+//						rotate.play([exportWindow]);
 //						var move3d:Move3D = new Move3D;
 //						move3d.xFrom = 0;
 //						move3d.xTo = 500;
@@ -239,14 +265,301 @@
 				}				
 			}
 			
+			private function measureClick(event:MouseEvent):void
+			{
+				map.removeEventListener(MouseEvent.CLICK,measureClick);
+				map.addEventListener(MouseEvent.MOUSE_MOVE,measureMove);
+			}
+			
+			private var drawType:String;
+			private function measureMove(event:MouseEvent):void
+			{
+				if (graphicsLayer.numGraphics == 0) return;
+				var gra:Graphic = graphicsLayer.graphicProvider[graphicsLayer.numGraphics - 1];
+				var l:int = 0;
+				var ptFrom:MapPoint;
+				var ptTo:MapPoint;
+				var gid:String;
+				if (drawType == DrawTool.POLYLINE)
+				{
+					var pl:Polyline = Polyline(gra.geometry);
+					l = pl.paths[0].length;
+					gid = gra.id + "-" + l;
+					ptFrom = pl.paths[0][l - 2];
+					ptTo = pl.paths[0][l - 1];
+					calcSegmentLengthDisplay(ptFrom,ptTo,gid)
+				} else if (drawType == DrawTool.POLYGON) {
+					if (gra.geometry.type != "esriGeometryPolygon")
+						return;
+					var poly:Polygon = Polygon(gra.geometry);
+					l = poly.rings[0].length;
+					if (l < 3) {
+						gid = gra.id + "-" + l;
+						ptFrom = poly.rings[0][l - 2];
+						ptTo = poly.rings[0][l - 1];
+						calcSegmentLengthDisplay(ptFrom,ptTo,gid)
+					} else {
+						gid = gra.id + "-" + l;
+						ptFrom = poly.rings[0][l - 3];
+						ptTo = poly.rings[0][l - 2];
+						calcSegmentLengthDisplay(ptFrom,ptTo,gid)
+						gid = gra.id + "-0";
+						ptFrom = poly.rings[0][0];
+						calcSegmentLengthDisplay(ptFrom,ptTo,gid)
+					}
+				} 
+			}
+			
+			private function calcSegmentLengthDisplay(pt1:MapPoint,pt2:MapPoint,gid:String):void
+			{
+				var len:String = calculateSegmentLength(pt1,pt2);
+				// for a polyline calculate the total cumlative length
+				var cumlen:String = "";
+				var ang:Number = calcAngle(pt1,pt2);
+				// Offset based on the quadrant the line is being drawn
+				var xOff:Number = 0;
+				var yOff:Number = 0;
+				if (ang >= 0 && ang < 45){
+					xOff = 5;
+					yOff = 10;
+				} else if (ang > 45){
+					xOff = 10;
+					yOff = 5
+				} else if (ang > -45 && ang < 0) {
+					xOff = 5;
+					yOff = 13;
+				} else {
+					xOff = -10;
+					yOff = 5;
+				}
+				// create a new textsymbol graphic to hold the updated length.
+				var aTF:TextFormat = new TextFormat("宋体", 15, 0xff0000,FontWeight.BOLD);
+				//var aTF:TextFormat = new TextFormat("Arial",12,0x000000);
+				var aTS:TextSymbol = new TextSymbol(len,'',0x000000,1,false,0,false,0,"middle",ang,xOff,yOff,aTF);
+				var midPT:MapPoint = new MapPoint;
+				midPT.x = (pt1.x + pt2.x) / 2;
+				midPT.y = (pt1.y + pt2.y) / 2;
+				var g:Graphic = new Graphic(midPT,aTS,null);
+				g.id = gid;
+				moveOrAddGraphic(g);
+				// create a label for the cumlative length
+				if (drawType == DrawTool.POLYLINE)
+				{
+					calculatePolylineLength();
+				}				
+			}
+			
+			private function calculateSegmentLength(pt1:MapPoint,pt2:MapPoint):String
+			{
+				var polyline:Polyline = new Polyline();
+				polyline.addPath([pt1, pt2]);
+				polyline.spatialReference = map.spatialReference;
+				
+				var polylineToMeasure:Polyline
+				
+				var wkid:Number = polyline.spatialReference.wkid;
+				var lengths:Array = new Array();
+
+					polylineToMeasure = polyline;
+					lengths = GeometryUtil.geodesicLengths([ polylineToMeasure ], Units.METERS);
+
+				
+				
+				var abbrDist:String = "米";
+				var convDist:Number = 1;
+				var length:Number = lengths[0] * convDist;
+				numFormatter.precision = 0;
+				var label:String = numFormatter.format(length) + " " + abbrDist;
+				return label;
+			}
+			
+			private function calculatePolylineLength():void
+			{
+				var gra:Graphic = graphicsLayer.graphicProvider[graphicsLayer.numGraphics - 1];
+				var pl:Polyline = Polyline(gra.geometry);
+				if (pl.paths[0].length < 3) {
+					return;
+				}
+				var polyline:Polyline = Polyline(gra.geometry);
+				polyline.spatialReference = map.spatialReference;
+				
+				var polylineToMeasure:Polyline
+				
+				var wkid:Number = polyline.spatialReference.wkid;
+				var lengths:Array = new Array();
+				var xOff:Number = 0;
+				var yOff:Number = 0;
+
+					polylineToMeasure = polyline;
+					lengths = GeometryUtil.geodesicLengths([ polylineToMeasure ], Units.METERS);
+
+				
+				var abbrDist:String = "米";
+				var convDist:Number = 1;
+				var length:Number = lengths[0] * convDist;
+				numFormatter.precision = 2;
+				var label:String = "距离共: " + numFormatter.format(length) + " " + abbrDist;
+				// create a new textsymbol graphic to hold the updated length.
+				var aTF:TextFormat = new TextFormat("宋体", 15, 0x0000FF,FontWeight.BOLD);
+				//var aTF:TextFormat = new TextFormat("Arial",12,0x000000);
+				xOff = 30;
+				yOff = -30;
+				var aTS:TextSymbol = new TextSymbol(label,'',0x0000FF,1,false,0,false,0,"start",0,xOff,yOff,aTF);
+				var endPT:MapPoint = polyline.paths[0][polyline.paths[0].length -1];
+				var g:Graphic = new Graphic(endPT,aTS,null);
+				g.id = "cumlativeTotal";
+				moveOrAddGraphic(g);
+			}
+			
+			private function calcAngle(pt1:MapPoint,pt2:MapPoint):Number
+			{
+				// Some basic trig to calculate the angle for the text to be placed
+				var y:Number = pt2.y - pt1.y;
+				var x:Number = pt2.x - pt1.x;
+				var r:Number = y / x;
+				var ang:Number = Math.atan(r) * 180/Math.PI * -1;
+				return ang;
+			}
+			
+			private function moveOrAddGraphic(gra:Graphic):void
+			{
+				// update the route segment's graphic
+				var isFound:Boolean = false;
+				for each (var g:Graphic in measureGraphicsLayer.graphicProvider)
+				{
+					if (g.id == gra.id)
+					{
+						isFound = true;
+						g.geometry = gra.geometry;
+						g.symbol = gra.symbol;
+					}
+				}
+				// if it wasn't found it doesn't exist.  Let's add it.
+				if (isFound == false)
+				{
+					measureGraphicsLayer.add(gra);
+				}
+			}
+			
+			private function measureGeometry(geom:Geometry):void
+			{
+				var wkid:Number = geom.spatialReference.wkid;
+			    calculateAreasAndLengths(geom);
+			}
+			
+			private function calculateAreasAndLengths(geom:Geometry):void
+			{
+				switch (geom.type)
+				{
+					case Geometry.POLYLINE:
+					{
+						var polyline:Polyline = Polyline(geom);
+						calculatePolylineLengths(polyline);
+						break;
+					}
+					case Geometry.POLYGON:
+					{
+						var polygon:Polygon = Polygon(geom);
+						calculatePolygonAreasAndLengths(polygon);
+						break;
+					}
+				}
+			}
+			
+			private var lastDrawnGraphic:Graphic;
+			private var editGraphic:Graphic;
+			private function calculatePolygonAreasAndLengths(polygon:Polygon):void
+			{
+				var polygonToMeasure:Polygon
+				
+				var wkid:Number = polygon.spatialReference.wkid;
+				polygonToMeasure = polygon;
+				
+				var lengths:Array = GeometryUtil.geodesicLengths([ new Polyline(polygonToMeasure.rings)], Units.METERS);
+				var areas:Array = GeometryUtil.geodesicAreas([ polygonToMeasure ], Units.SQUARE_METERS);
+				
+				var abbrArea:String = "平方米";
+				var convArea:Number = 1;
+				var abbrDist:String = "平方米";
+				var convDist:Number = 1;
+				var area:Number = areas[0] * convArea;
+				var length:Number = lengths[0] * convDist;
+				
+				var label:String = createAreasAndLengthsLabel(area, abbrArea, length, abbrDist);
+				addDrawLabel(label, lastDrawnGraphic);
+			}
+			
+			private function createAreasAndLengthsLabel(area:Number, areaAbbrev:String, length:Number, lengthAbbrev:String):String
+			{
+				numFormatter.precision = 2;
+				var label:String = "面积:" + " " + numFormatter.format(area) + " " + areaAbbrev;
+				label += "\n" + "周长:" + " " + numFormatter.format(length) + " " + lengthAbbrev;
+				return label;
+				
+			}
+			
+			private function calculatePolylineLengths(polyline:Polyline):void
+			{
+				var polylineToMeasure:Polyline
+				
+				var wkid:Number = polyline.spatialReference.wkid;
+				polylineToMeasure = polyline;
+				
+				var lengths:Array = GeometryUtil.geodesicLengths([ polylineToMeasure ], Units.METERS);
+				var abbrDist:String = "米";
+				var convDist:Number = 1;
+				var length:Number = lengths[0] * convDist;
+				
+				if (polyline.paths[0].length > 2) {
+					var label:String = createLengthsLabel(length, abbrDist);
+					addDrawLabel(label, lastDrawnGraphic);
+				}
+			}
+			
+			private function createLengthsLabel(length:Number, lengthAbbrev:String):String
+			{
+				numFormatter.precision = 2;
+				return "距离共:" + " " + numFormatter.format(length) + " " + lengthAbbrev;
+			}
+			
+			private var measurePt:MapPoint;
+			private function addDrawLabel(label:String, lastDrawnGraphic:Graphic):void
+			{
+				var txtSym:TextSymbol = new TextSymbol(label);
+				txtSym.yoffset = 8;
+				var txtFormat:TextFormat = new TextFormat("宋体", 15, 0xff0000,FontWeight.BOLD);
+				// var txtFormat:TextFormat = new TextFormat("Arial", 12, 0x000000, true); // black label
+				txtSym.textFormat = txtFormat;
+				// also remove measurement label if any
+				var gra:Graphic = new Graphic(measurePt);
+				graphicsLayer.remove(getMeasurementGraphic(lastDrawnGraphic));
+				gra.name = lastDrawnGraphic.id;
+				gra.symbol = txtSym;
+				gra.mouseEnabled = false;
+				gra.mouseChildren = false;
+				graphicsLayer.add(gra);
+			}
+			
+			private function getMeasurementGraphic(graphic:Graphic):Graphic
+			{
+				var result:Graphic;
+				for (var i:int = 0; i < graphicsLayer.numGraphics; )
+				{
+					if (Graphic(graphicsLayer.getChildAt(i)).name == graphic.id)
+					{
+						result = Graphic(graphicsLayer.getChildAt(i));
+						break;
+					}
+					else
+					{
+						i++;
+					}
+				}
+				return result;
+			}
+			
 			private function clear():void
 			{
-				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
-				redLingGraphicsLayer.clear();
-				
-				var drawlayer:GraphicsLayer = this.map.getLayer("drawlayer") as GraphicsLayer;
-				if(drawlayer!=null) drawlayer.clear();
-				
 				for each(var layer:Layer in this.map.layers)
 				{
 					if(layer is GraphicsLayer)
@@ -263,118 +576,191 @@
 			private var latestEndpoint:MapPoint;
 			private function drawEndHandler(event:DrawEvent):void
 			{
-				
+				map.removeEventListener(MouseEvent.MOUSE_MOVE,measureMove);
+				map.addEventListener(MouseEvent.CLICK,measureClick);
 				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
-				redLingGraphicsLayer.clear();
-				
+
 				var calculatedAttributes:Object;
-				
+				lastDrawnGraphic = event.graphic;
 				if(event.graphic.geometry is Polyline)
 				{
-					var drawnLine:Polyline = Polyline(event.graphic.geometry);
-					drawnLine.spatialReference = this.map.spatialReference;
-					var g:Graphic = new Graphic;
-					g.geometry = drawnLine;
-					g.symbol = this.lineSymbol;
-					redLingGraphicsLayer.add(g);
+//					var drawnLine:Polyline = Polyline(event.graphic.geometry);
+//					drawnLine.spatialReference = this.map.spatialReference;
+//					var g:Graphic = new Graphic;
+//					g.geometry = drawnLine;
+//					g.symbol = this.lineSymbol;
+//					redLingGraphicsLayer.add(g);
 					
-					var lengthArr:Array = GeometryUtil.geodesicLengths([drawnLine],Units.METERS);
-					var pt:MapPoint;
+//					var lengthArr:Array = GeometryUtil.geodesicLengths([drawnLine],Units.METERS);
+//					var pt:MapPoint;
+//					
+//					if (drawnLine.paths[0].length > 2)
+//					{
+//						var mid:int = drawnLine.paths[0].length / 2;
+//						pt = drawnLine.paths[0][mid];
+//					}
+//					else
+//					{
+//						pt = drawnLine.paths[0][0];
+//						
+//					}
+//					if(lengthArr[0]<3000){
+//						calculatedAttributes = { distance: Math.round(lengthArr[0]) + " " + "米", featureType: "line" };
+//					}
+//					else
+//					{
+//						calculatedAttributes = { distance: myNumberFormatter.format(lengthArr[0]) + " " + "千米", featureType: "line" };
+//					}
+//					
+//					var measurementGraphic:Graphic = new Graphic(pt, myInfoSymbol, calculatedAttributes);
+//					redLingGraphicsLayer.add(measurementGraphic);
 					
-					if (drawnLine.paths[0].length > 2)
-					{
-						var mid:int = drawnLine.paths[0].length / 2;
-						pt = drawnLine.paths[0][mid];
-					}
-					else
-					{
-						pt = drawnLine.paths[0][0];
-						
-					}
-					if(lengthArr[0]<3000){
-						calculatedAttributes = { distance: Math.round(lengthArr[0]) + " " + "米", featureType: "line" };
-					}
-					else
-					{
-						calculatedAttributes = { distance: myNumberFormatter.format(lengthArr[0]) + " " + "千米", featureType: "line" };
-					}
-					
-					var measurementGraphic:Graphic = new Graphic(pt, myInfoSymbol, calculatedAttributes);
-					redLingGraphicsLayer.add(measurementGraphic);
-					
-					Alert.show(JSONUtil.encode(event.graphic.geometry));
-					
+//					Alert.show(JSONUtil.encode(event.graphic.geometry));
+					updateMeasureLabelPosition(event.graphic.geometry);
+					measureGeometry(event.graphic.geometry);
+					removeCumulativeGraphic();
 					
 				}
 				else if(event.graphic.geometry is Polygon)
 				{
 					var polygon:Polygon = Polygon(event.graphic.geometry);
-					polygon.spatialReference = this.map.spatialReference;
-					var g0:Graphic = new Graphic;
-					g0.geometry = polygon;
-					g0.symbol = this.mySFS;
-					redLingGraphicsLayer.add(g0);
+//					polygon.spatialReference = this.map.spatialReference;
+//					var g0:Graphic = new Graphic;
+//					g0.geometry = polygon;
+//					g0.symbol = this.mySFS;
+//					redLingGraphicsLayer.add(g0);
 					
-					latestEndpoint = polygon.extent.center;
+//					latestEndpoint = polygon.extent.center;
 					
 					if(GeometryUtil.polygonSelfIntersecting(polygon))
 					{
 						Alert.show("图形自相交，请重新绘制");
 						return;
 					}
-					var areasArr:Array = GeometryUtil.geodesicAreas([polygon],Units.SQUARE_METERS);
+//					var areasArr:Array = GeometryUtil.geodesicAreas([polygon],Units.SQUARE_METERS);
+//					
+//					var dist:Number = areasArr[0];;
+//					var myAttributes:Object = {};
+//					if(dist < 1000000)
+//					{
+//						myAttributes.area = Math.round(dist) + " 平方米";
+//					}
+//					else
+//					{
+//						myAttributes.area = myNumberFormatter.format(dist/1000000) + " 平方千米";
+//					}
+//					var textGra:Graphic = new Graphic(latestEndpoint, myInfoSymbol2, myAttributes);
+//					redLingGraphicsLayer.add(textGra);
 					
-					var dist:Number = areasArr[0];;
-					var myAttributes:Object = {};
-					if(dist < 1000000)
-					{
-						myAttributes.area = Math.round(dist) + " 平方米";
-					}
-					else
-					{
-						myAttributes.area = myNumberFormatter.format(dist/1000000) + " 平方千米";
-					}
-					var textGra:Graphic = new Graphic(latestEndpoint, myInfoSymbol2, myAttributes);
-					redLingGraphicsLayer.add(textGra);
 					
+					updateMeasureLabelPosition(event.graphic.geometry);
+					measureGeometry(event.graphic.geometry);
 				}
 			}
 			
-			private function lengthsCompleteHandler(event:GeometryServiceEvent):void
+			private function removeCumulativeGraphic():void
 			{
-				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
-				var dist:Number = (event.result as Array)[0];
-				var myAttributes:Object = {};
-				if (dist < 3000)
+				// remove the cumulative total graphic
+				for each (var g:Graphic in measureGraphicsLayer.graphicProvider)
 				{
-					myAttributes.distance = Math.round(dist) + " 米";
+					if (g.id == "cumlativeTotal")
+					{
+						measureGraphicsLayer.remove(g);
+					}
 				}
-				else
-				{
-					myAttributes.distance = Number(dist / 1000).toFixed(1) + " 千米";
-				}
-				var g:Graphic = new Graphic(latestEndpoint, myInfoSymbol, myAttributes);
-				redLingGraphicsLayer.add(g);
 			}
 			
+			private function updateMeasureLabelPosition(geom:Geometry):void
+			{
+				switch (geom.type)
+				{
+					case Geometry.POLYLINE:
+					{
+						var polyline:Polyline = geom as Polyline;
+						var polylineExtent:Extent;
+						if (polyline.paths.length == 1)
+						{
+							polylineExtent = polyline.extent;
+						}
+						else
+						{
+							// Multiple paths, hence show the measurement label at the center of first path
+							var tempPolyline:Polyline = new Polyline;
+							tempPolyline.paths = [ polyline.paths[0]];
+							polylineExtent = tempPolyline.extent;
+						}
+						measurePt = polylineExtent.center;
+						break;
+					}
+					case Geometry.POLYGON:
+					{
+						var polygon:Polygon = geom as Polygon;
+						var polygonExtent:Extent;
+						if (polygon.rings.length == 1)
+						{
+							polygonExtent = polygon.extent;
+						}
+						else
+						{
+							// Multiple rings, hence show the measurement label at the center of first ring
+							var tempPolygon:Polygon = new Polygon;
+							tempPolygon.rings = [ polygon.rings[0]];
+							polygonExtent = tempPolygon.extent;
+						}
+						measurePt = polygonExtent.center;
+						break;
+					}
+					case Geometry.EXTENT:
+					{
+						measurePt = geom.extent.center;
+						break;
+					}
+				}
+			}
 			
-			protected function geometryService_areasAndLengthsCompleteHandler(event:GeometryServiceEvent):void
+//			private function lengthsCompleteHandler(event:GeometryServiceEvent):void
+//			{
+//				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+//				var dist:Number = (event.result as Array)[0];
+//				var myAttributes:Object = {};
+//				if (dist < 3000)
+//				{
+//					myAttributes.distance = Math.round(dist) + " 米";
+//				}
+//				else
+//				{
+//					myAttributes.distance = Number(dist / 1000).toFixed(1) + " 千米";
+//				}
+//				var g:Graphic = new Graphic(latestEndpoint, myInfoSymbol, myAttributes);
+//				redLingGraphicsLayer.add(g);
+//			}
+			
+			
+//			protected function geometryService_areasAndLengthsCompleteHandler(event:GeometryServiceEvent):void
+//			{
+//				// TODO Auto-generated method stub
+//				var dist:Number = (event.result.areas as Array)[0];;
+//				var myAttributes:Object = {};
+//				if(dist < 1000000)
+//				{
+//					myAttributes.area = Math.round(dist) + " 平方米";
+//				}
+//				else
+//				{
+//					myAttributes.area = myNumberFormatter.format(dist/1000000) + " 平方千米";
+//				}
+//				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
+//				var g:Graphic = new Graphic(latestEndpoint, myInfoSymbol2, myAttributes);
+//				redLingGraphicsLayer.add(g);
+//			}
+
+			protected function drawbar_drawStartHandler(event:DrawEvent):void
 			{
 				// TODO Auto-generated method stub
-				var dist:Number = (event.result.areas as Array)[0];;
-				var myAttributes:Object = {};
-				if(dist < 1000000)
-				{
-					myAttributes.area = Math.round(dist) + " 平方米";
-				}
-				else
-				{
-					myAttributes.area = myNumberFormatter.format(dist/1000000) + " 平方千米";
-				}
-				var redLingGraphicsLayer:GraphicsLayer=this.map.getLayer("RedLiningGraphicsLayer") as GraphicsLayer;
-				var g:Graphic = new Graphic(latestEndpoint, myInfoSymbol2, myAttributes);
-				redLingGraphicsLayer.add(g);
+				graphicsLayer.clear();
+				measureGraphicsLayer.clear();
 			}
+
 		]]>
 	</fx:Script>
 	<s:HGroup width="100%" height="100%" gap="0">
@@ -390,8 +776,8 @@
 		<s:ToggleButton toolTip="距离测量" id="bt4" click="itemClick(event,10)" width="34" height="39" styleName="jl" />
 		<s:ToggleButton toolTip="面积测量" id="bt5" click="itemClick(event,11)" width="34" height="39" styleName="mj" />
 		<s:ToggleButton toolTip="地图清理" id="bt6" click="itemClick(event,9)" width="34" height="39" styleName="qc" />
-		<s:ToggleButton toolTip="打印" id="bt7" click="itemClick(event,14)" width="34" height="39" styleName="dy" />
-		<!--<s:ToggleButton toolTip="地图对比" id="bt8" click="itemClick(event,12)" width="34" height="39" styleName="fp" />-->
+		<!--<s:ToggleButton toolTip="打印" id="bt7" click="itemClick(event,14)" width="34" height="39" styleName="dy" />
+		<s:ToggleButton toolTip="地图对比" id="bt8" click="itemClick(event,12)" width="34" height="39" styleName="fp" />-->
 		<s:ToggleButton toolTip="全屏" id="bt9" click="itemClick(event,13)" width="34" height="39" styleName="qp" />
 	</s:HGroup>
 </s:Group>

@@ -10,8 +10,9 @@
 	    <layer id="yx" url="http://218.15.41.59:8719/wmts/sg_gz_image_map/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
 	    <layer id="zj" url="http://218.15.41.59:8719/wmts/sg_gz_image_zj/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
 
-	    <layer id="ddzh" name="地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="true"></layer>
-	    <layer id="dz" name="地质灾害地裂缝" url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=sg_dzzh_dlf&request=Query" showtype="check" type="feature" visible="false" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"/>
+	    <layer id="ddzh" name="韶关地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="true"></layer>
+	    <layer id="DZZHYHD" name="翁源地质灾害" url="assets/DZZHYHD.json" showtype="check" type="feature" visible="false" icon="assets/images/p2.png" iconwidth="21" iconheight="20"/>
+	    <layer id="YBPDK" name="已报批地块" url="assets/YBPDK.json" showtype="check" type="feature" visible="true" symbolcolor="0xff0000" symbolalpha="0.1"/>
     </layers>
 	    
 	<querylayers>
@@ -21,10 +22,15 @@
 	        <queryfield displayname="名称" name="NAME"></queryfield>
 	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
 	    </querylayer>
-	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/icon/pin/p1.png" iconwidth="21" iconheight="20"
+	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
 	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000&request=Query">
 	        <queryfield displayname="名称" name="NAME"></queryfield>
 	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
+	    </querylayer>
+	    <querylayer name="翁源地质灾害" displayname="地质灾害"  namefield="ZHLX" contentfield="ZHDD" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
+	        url="assets/DZZHYHD_query.json?1=1">
+	        <queryfield displayname="灾害类型" name="ZHLX"></queryfield>
+	        <queryfield displayname="灾害地点" name="ZHDD"></queryfield>
 	    </querylayer>
 	</querylayers>
 	

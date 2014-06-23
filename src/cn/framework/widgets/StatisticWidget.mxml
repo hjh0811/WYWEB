@@ -236,6 +236,7 @@
 			private function clear():void
 			{
 				if(drawLayer!=null) drawLayer.clear();
+				selectedDrawingIcon= defaultImage;
 				clearSelectionFilter();
 				defaultImage.filters = [glowFilter];
 			}
