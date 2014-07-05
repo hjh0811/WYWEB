@@ -562,7 +562,7 @@
 			{
 				for each(var layer:Layer in this.map.layers)
 				{
-					if(layer is GraphicsLayer)
+					if(layer is GraphicsLayer && layer.id.indexOf("featurelayer") == -1)
 					{
 						var glayer:GraphicsLayer = layer as GraphicsLayer;
 						glayer.clear();

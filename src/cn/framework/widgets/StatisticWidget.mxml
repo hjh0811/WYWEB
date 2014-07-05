@@ -32,6 +32,7 @@
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.core.FlexGlobals;
+			import mx.events.ListEvent;
 			import mx.managers.CursorManager;
 			import mx.managers.PopUpManager;
 			import mx.rpc.events.ResultEvent;
@@ -264,6 +265,22 @@
 			}
 			
 			
+
+			protected function layerComb_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				var layerXML:XML = layerComb.selectedItem as XML;
+				classfieldlist = layerXML.classfield;
+				statfieldlist = layerXML.sumfield;
+			}
+
+
+			protected function typeComb_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+
+			}
+
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -277,7 +294,7 @@
 	<mx:VBox  width="100%" paddingBottom="10" paddingLeft="10" paddingTop="15" paddingRight="10" horizontalGap="5" verticalGap="10" verticalAlign="top" horizontalAlign="center">
 		<mx:HBox width="100%" verticalAlign="middle">
 			<mx:Label text="统计图层" width="66"/>
-			<mx:ComboBox width="100%" id="layerComb" dataProvider="{staticlayerlist}" labelField="@name"/>
+			<mx:ComboBox width="100%" id="layerComb" dataProvider="{staticlayerlist}" labelField="@name" change="layerComb_changeHandler(event)"/>
 		</mx:HBox>
 		<mx:HBox width="100%" verticalAlign="middle">
 			<mx:Label text="分类字段" width="66"/>

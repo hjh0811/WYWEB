@@ -5,9 +5,6 @@
 	<fx:Script>
 		<![CDATA[
 			import cn.framework.FrameContainer;
-			
-			import com.esri.ags.symbols.SimpleLineSymbol;
-			
 			import cn.framework.utils.WMTSLayer;
 			
 			import com.esri.ags.Graphic;
@@ -19,6 +16,7 @@
 			import com.esri.ags.layers.Layer;
 			import com.esri.ags.symbols.PictureMarkerSymbol;
 			import com.esri.ags.symbols.SimpleFillSymbol;
+			import com.esri.ags.symbols.SimpleLineSymbol;
 			import com.esri.ags.utils.JSONUtil;
 			
 			import flashx.textLayout.formats.VerticalAlign;
@@ -71,6 +69,11 @@
 						var hgroud:HGroup = new HGroup;
 						hgroud.percentWidth = 100;
 						hgroud.verticalAlign = VerticalAlign.MIDDLE;
+//						var image:Image = new Image;
+//						image.source = "assets/images/layer_dxt.png";
+//						image.width = 40;
+//						image.height = 26;
+						
 						var layerLabel:Label = new Label;
 						layerLabel.percentWidth = 100;
 						layerLabel.text = layerxml.@name;
@@ -81,6 +84,7 @@
 						toggleButton.width = 42;
 						toggleButton.height = 25;
 						toggleButton.addEventListener(MouseEvent.CLICK, layerSwitchhandler);
+//						hgroud.addElement(image);
 						hgroud.addElement(layerLabel);
 						hgroud.addElement(toggleButton);
 						

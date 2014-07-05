@@ -5,4 +5,8 @@
 	<fx:Style source="default.css"/>
 	
 	<framework:FrameContainer/>
+	
+	<!--以下防止module样式丢失-->
+	<mx:TitleWindow width="20" height="20" visible="false"/>
+	<s:TextInput visible="false"/>
 </s:Application>

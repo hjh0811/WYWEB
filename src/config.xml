@@ -10,25 +10,37 @@
 	    <layer id="yx" url="http://218.15.41.59:8719/wmts/sg_gz_image_map/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
 	    <layer id="zj" url="http://218.15.41.59:8719/wmts/sg_gz_image_zj/Default/epsg:4610/" showtype="base" type="wmts" visible="false"></layer>
 
-	    <layer id="ddzh" name="韶关地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="true"></layer>
-	    <layer id="DZZHYHD" name="翁源地质灾害" url="assets/DZZHYHD.json" showtype="check" type="feature" visible="false" icon="assets/images/p2.png" iconwidth="21" iconheight="20"/>
-	    <layer id="YBPDK" name="已报批地块" url="assets/YBPDK.json" showtype="check" type="feature" visible="true" symbolcolor="0xff0000" symbolalpha="0.1"/>
+	    <layer id="ddzh_featurelayer" name="韶关地质灾害" url="http://218.15.41.59:8719/wmts/sg_gtj_dzzh/Default/epsg:4610/" showtype="check" type="wmts" visible="true"></layer>
+	    <layer id="DZZHYHD_featurelayer" name="翁源地质灾害" url="assets/DZZHYHD.json" showtype="check" type="feature" visible="false" icon="assets/images/p2.png" iconwidth="21" iconheight="20"/>
+	    <layer id="JSGCGHXK_featurelayer" name="建设工程规划许可" url="assets/JSGCGHXK.json" showtype="check" type="feature" visible="true" icon="assets/images/p2.png" iconwidth="21" iconheight="20"/>
+	    <layer id="YBPDK_featurelayer" name="已报批地块" url="assets/YBPDK.json" showtype="check" type="feature" visible="true" symbolcolor="0xff0000" symbolalpha="0.1"/>
     </layers>
 	    
 	<querylayers>
 	    <!-- 政务外网 -->
-	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000">
+	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" count="pages" icon="assets/main/left_searchlist_icon.png" iconwidth="21" iconheight="20"
+	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000" >
 	        <queryfield displayname="名称" name="NAME"></queryfield>
 	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
 	    </querylayer>
-	    <querylayer name="地名地址" displayname="地名地址"  namefield="NAME" contentfield="ADDNAME" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
-	        url="http://218.15.41.59:8719/NewMapServer/WebServices/FeatureServer.php?layer=RHDMDZ2000&request=Query">
-	        <queryfield displayname="名称" name="NAME"></queryfield>
-	        <queryfield displayname="地址" name="ADDNAME"></queryfield>
+	    <querylayer name="建设工程规划许可" displayname="建设工程规划许可"  namefield="XMMC" contentfield="JSDW" count="count" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
+	        url="assets/JSGCGHXK_query.json?1=1"
+	        resume="项目名称:XMMC;建设单位:JSDW" labelwidth="60" formXML="cn/framework/widgets/UserManager/formXML/JSGCGHXKForm.xml"
+	        >
+	        <queryfield displayname="项目名称" name="XMMC"></queryfield>
+	        <queryfield displayname="建设单位" name="JSDW"></queryfield>
 	    </querylayer>
-	    <querylayer name="翁源地质灾害" displayname="地质灾害"  namefield="ZHLX" contentfield="ZHDD" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
-	        url="assets/DZZHYHD_query.json?1=1">
+	    <querylayer name="已报批地块" displayname="已报批地块"  namefield="XMMC" contentfield="TDSYXZ" count="count" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
+	        url="assets/YBPDK_query.json?1=1"
+	        resume="项目名称:XMMC;土地使用性质:TDSYXZ" labelwidth="90"
+	        >
+	        <queryfield displayname="项目名称" name="XMMC"></queryfield>
+	        <queryfield displayname="土地使用性质" name="TDSYXZ"></queryfield>
+	    </querylayer>
+	    <querylayer name="翁源地质灾害" displayname="翁源地质灾害"  namefield="ZHLX" contentfield="ZHDD" count="count" icon="assets/images/p2.png" iconwidth="21" iconheight="20"
+	        url="assets/DZZHYHD_query.json?1=1"
+	        resume="灾害类型:ZHLX;灾害地点:ZHDD" labelwidth="60"
+	        >
 	        <queryfield displayname="灾害类型" name="ZHLX"></queryfield>
 	        <queryfield displayname="灾害地点" name="ZHDD"></queryfield>
 	    </querylayer>
@@ -43,15 +55,14 @@
 	        <sumfield label="数量" name="COUNT"/>
 	    </staticlayer>
 	    <staticlayer name="建设工程规划许可"
-	        url="http://127.0.0.1:8719/NewMapServer/WebServices/FeatureServer.php?layer=JSGCGHXK">
+	        url="assets/JSGCGHXK.json?1=1">
 	        <classfield label="项目名称" name="XMMC"/>
 	        <classfield label="建设单位" name="JSDW"/>
 	        <sumfield label="数量" name="COUNT"/>
 	    </staticlayer>
 	    <staticlayer name="已报批地块"
-	        url="http://127.0.0.1:8719/NewMapServer/WebServices/FeatureServer.php?layer=JSGCGHXK">
-	        <classfield label="名称" name="XMMC"/>
-	        <classfield label="地址" name="JSDW"/>
+	        url="assets/YBPDK.json?1=1">
+	        <classfield label="土地使用性质" name="TDSYXZ"/>
 	        <sumfield label="数量" name="COUNT"/>
 	    </staticlayer>
 	</statistic>

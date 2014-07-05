@@ -1,0 +1,19 @@
+<?xml version="1.0" ?> 
+<configuration  xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx" width="460" height="300">
+    <form width="416" height="352">
+			<s:Label x="16" y="31" text="项目名称"/>
+			<s:TextInput x="72" y="26" width="329" text="XMMC" height="22" editable="false"/>
+			<s:Label x="16" y="94" text="建设位置"/>
+			<s:TextInput x="72" y="89" width="329" text="JSWZ" height="22" editable="false"/>
+			<s:Label x="16" y="62" text="建设单位"/>
+			<s:TextInput x="72" y="57" width="329" text="JSDW" height="22" editable="false"/>
+			<s:TextArea x="72" y="121" height="67" width="329" text="BJQK" editable="false"/>
+			<s:Label x="16" y="121" text="报建情况"/>
+			<s:TextArea x="71" y="259" height="63" width="329" text="BZ" editable="false"/>
+			<s:Label x="40" y="260" text="备注"/>
+			<s:Label x="49" y="233" text="TZ"/>
+			<s:TextInput x="71" y="229" width="329" enabled="false" text="TZ" editable="false"/>
+			<s:Label x="16" y="203" text="报建时间"/>
+			<s:TextInput x="72" y="198" width="329" text="BJSJ" editable="false"/>
+	</form>
+</configuration>
